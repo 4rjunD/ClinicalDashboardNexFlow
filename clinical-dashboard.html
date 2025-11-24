@@ -1,0 +1,3147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinician Dashboard - NexFlow</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="risk-model.js"></script>
+    <script src="gpt.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fhirclient/build/fhir-client.js"></script>
+    <style>
+        body {
+            background: #FFFFFF;
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        .dashboard-container {
+            background: #FFFFFF;
+            border-radius: 0;
+            box-shadow: none;
+            padding: 3rem;
+            max-width: 1400px;
+            width: 100%;
+            margin-top: 3rem;
+            border: none;
+        }
+        .dashboard-header {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 2.75rem;
+        }
+        .dashboard-header h1 {
+            font-size: 2.55rem;
+            color: #000000;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            font-family: 'Inter', sans-serif;
+        }
+        .dashboard-subtitle {
+            color: #6B7280;
+            font-size: 1.05rem;
+        }
+        .invite-section {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        .invite-section input {
+            padding: 0.7rem;
+            border-radius: 8px;
+            border: 1.5px solid #E5E7EB;
+            font-size: 1rem;
+        }
+        .invite-section button {
+            background: #000000;
+            color: white;
+            border: 2px solid #000000;
+            padding: 0.7rem 1.5rem;
+            border-radius: 0;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Inter', sans-serif;
+        }
+        .invite-section button:hover {
+            background: #FFFFFF;
+            color: #000000;
+            box-shadow: 4px 4px 0 0 #000000;
+        }
+        .search-filter-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            background: #FFFFFF;
+            padding: 1.5rem;
+            border-radius: 0;
+            border: 2px solid #000000;
+            box-shadow: none;
+        }
+        .search-filter-row input {
+            flex: 1;
+            min-width: 250px;
+            padding: 0.875rem 1.25rem;
+            border-radius: 0;
+            border: 2px solid #000000;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            background: white;
+            font-family: 'Inter', sans-serif;
+        }
+        .search-filter-row input:focus {
+            outline: none;
+            border-color: #000000;
+            box-shadow: 4px 4px 0 0 #000000;
+        }
+        .search-filter-row select {
+            padding: 0.875rem 1.25rem;
+            border-radius: 0;
+            border: 2px solid #000000;
+            font-size: 1rem;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 200px;
+            font-family: 'Inter', sans-serif;
+        }
+        .search-filter-row select:focus {
+            outline: none;
+            border-color: #000000;
+            box-shadow: 4px 4px 0 0 #000000;
+        }
+        .patient-list {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 2rem;
+            background: white;
+            border-radius: 0;
+            overflow: hidden;
+            border: 2px solid #000000;
+            box-shadow: none;
+        }
+        .patient-list thead {
+            background: #000000;
+            color: white;
+        }
+        .patient-list th, .patient-list td {
+            padding: 1.25rem 1.5rem;
+            text-align: left;
+        }
+        .patient-list .actions-col {
+            text-align: center;
+        }
+        .patient-list th {
+            color: white;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .patient-list tbody tr {
+            border-bottom: 1px solid #F3F4F6;
+            transition: all 0.2s ease;
+        }
+        .patient-list tbody tr:hover {
+            background: #F9FAFB;
+            box-shadow: inset 4px 0 0 0 #000000;
+        }
+        .patient-list tbody tr:last-child {
+            border-bottom: none;
+        }
+        .patient-list td {
+            color: #374151;
+            font-size: 0.95rem;
+            vertical-align: middle;
+        }
+        .health-tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .health-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 0;
+            background: #000000;
+            color: white;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: 2px solid #000000;
+            transition: all 0.2s ease;
+            font-family: 'Inter', sans-serif;
+        }
+        .health-tag:hover {
+            background: #FFFFFF;
+            color: #000000;
+            box-shadow: 4px 4px 0 0 #000000;
+        }
+        .tag-remove {
+            background: #FFFFFF;
+            border: 2px solid #000000;
+            color: #000000;
+            width: 20px;
+            height: 20px;
+            border-radius: 0;
+            cursor: pointer;
+            font-size: 1rem;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            transition: all 0.2s ease;
+            font-weight: 700;
+            margin-left: 0.5rem;
+        }
+        .health-tag:hover .tag-remove {
+            background: #000000;
+            color: #FFFFFF;
+        }
+        .tag-remove:hover {
+            background: #000000;
+            color: #FFFFFF;
+            box-shadow: 2px 2px 0 0 #000000;
+        }
+        .add-tag-btn {
+            background: #E5E7EB;
+            border: 2px dashed #9CA3AF;
+            color: #6B7280;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            transition: all 0.2s ease;
+        }
+        .add-tag-btn:hover {
+            background: #000000;
+            border-color: #000000;
+            color: #FFFFFF;
+        }
+        .no-conditions {
+            color: #9CA3AF;
+            font-style: italic;
+            font-size: 0.9rem;
+        }
+        .action-btn {
+            background: #000000;
+            border: 2px solid #000000;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 140px;
+            justify-content: center;
+        }
+        .patient-list .actions-col .action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+        }
+        .action-btn:hover {
+            background: #FFFFFF;
+            color: #000000;
+            box-shadow: 4px 4px 0 0 #000000;
+            transform: translateY(-2px);
+        }
+        .action-btn svg {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+        .condition-select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #E5E7EB;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-top: 1rem;
+        }
+        .condition-select:focus {
+            outline: none;
+            border-color: #000000;
+            box-shadow: 4px 4px 0 0 #000000;
+        }
+        .histogram-section {
+            margin-bottom: 2.5rem;
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0;
+            border: 2px solid #000000;
+            box-shadow: none;
+        }
+        .histogram-section canvas {
+            max-height: 300px !important;
+        }
+        .patient-detail-modal {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .patient-detail-content {
+            background: #FFFFFF;
+            border-radius: 0;
+            padding: 0;
+            max-width: 1400px;
+            width: 95vw;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 8px 8px 0 0 #000000;
+            border: 2px solid #000000;
+            position: relative;
+        }
+        .patient-detail-hero {
+            position: relative;
+            background: #000000;
+            padding: 2.5rem 2.5rem 3.5rem;
+            border-radius: 0;
+            color: white;
+            overflow: hidden;
+            border-bottom: 2px solid #000000;
+        }
+        .patient-detail-hero::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: none;
+            opacity: 1;
+        }
+        .hero-content {
+            position: relative;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.5rem;
+            z-index: 1;
+        }
+        .patient-avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.18);
+            border: 2px solid rgba(255, 255, 255, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: white;
+            letter-spacing: 0.05em;
+        }
+        .patient-identity {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+        .patient-identity h2 {
+            margin: 0;
+            font-size: 1.9rem;
+            letter-spacing: -0.02em;
+            color: white;
+        }
+        .patient-identity p {
+            margin: 0;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 1rem;
+        }
+        .hero-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-left: auto;
+        }
+        .hero-tag {
+            background: rgba(255, 255, 255, 0.22);
+            color: white;
+            padding: 0.45rem 0.85rem;
+            font-weight: 500;
+            border-radius: 9999px;
+            font-size: 0.9rem;
+            box-shadow: 0 6px 18px rgba(17, 24, 39, 0.15);
+        }
+        .patient-detail-body {
+            padding: 2rem 2.5rem 2.5rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        .patient-detail-body.single-column {
+            grid-template-columns: 1fr;
+        }
+        .trajectory-column {
+            display: flex;
+            flex-direction: column;
+            gap: 1.75rem;
+        }
+        .actions-column {
+            display: flex;
+            flex-direction: column;
+            gap: 1.75rem;
+        }
+        .overall-risk-score {
+            background: #000000;
+            color: #FFFFFF;
+            padding: 1.5rem;
+            border: 2px solid #000000;
+            margin-bottom: 1.5rem;
+        }
+        .overall-risk-score h4 {
+            margin: 0 0 0.5rem 0;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .overall-risk-score-value {
+            font-size: 3rem;
+            font-weight: 800;
+            font-family: 'Roboto Mono', monospace;
+            line-height: 1;
+        }
+        .overall-risk-score-card {
+            background: #000000;
+            color: #FFFFFF;
+            padding: 1.5rem;
+            border: 2px solid #000000;
+            margin-bottom: 1.5rem;
+        }
+        .overall-risk-score-card.excellent {
+            background: #10B981;
+        }
+        .overall-risk-score-card.good {
+            background: #3B82F6;
+        }
+        .overall-risk-score-card.moderate {
+            background: #F59E0B;
+        }
+        .overall-risk-score-card.high {
+            background: #EF4444;
+        }
+        .overall-risk-score-card.critical {
+            background: #7C2D12;
+        }
+        .overall-risk-score-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+            opacity: 0.9;
+        }
+        .disease-dropdown {
+            margin-bottom: 1rem;
+        }
+        .disease-dropdown-header {
+            background: #000000;
+            color: #FFFFFF;
+            padding: 1rem 1.25rem;
+            border: 2px solid #000000;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .disease-dropdown-header:hover {
+            background: #FFFFFF;
+            color: #000000;
+        }
+        .disease-dropdown-header.active {
+            background: #FFFFFF;
+            color: #000000;
+        }
+        .disease-dropdown-header.active svg {
+            transform: rotate(180deg);
+        }
+        .disease-dropdown-content {
+            display: none;
+            padding: 1rem;
+            border: 2px solid #000000;
+            border-top: none;
+            background: #FFFFFF;
+        }
+        .disease-dropdown-content.active {
+            display: block;
+        }
+        .recommendation-item {
+            padding: 1rem;
+            border: 2px solid #000000;
+            margin-bottom: 1rem;
+            background: #FFFFFF;
+        }
+        .recommendation-item:last-child {
+            margin-bottom: 0;
+        }
+        .recommendation-impact {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: #000000;
+            color: #FFFFFF;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+            border: 2px solid #000000;
+        }
+        .trajectory-detail-card {
+            background: #FFFFFF;
+            border: 2px solid #000000;
+            padding: 1.5rem;
+        }
+        .trajectory-detail-card h3 {
+            margin: 0 0 1rem 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #000000;
+        }
+        .trajectory-chart-container {
+            height: 250px;
+            margin-bottom: 1rem;
+        }
+        .trajectory-insights {
+            margin-top: 1rem;
+        }
+        .trajectory-insight-item {
+            padding: 0.75rem;
+            border: 2px solid #000000;
+            margin-bottom: 0.5rem;
+            background: #F9FAFB;
+        }
+        .trajectory-insight-item:last-child {
+            margin-bottom: 0;
+        }
+        .trajectory-insight-item h5 {
+            margin: 0 0 0.5rem 0;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #000000;
+        }
+        .trajectory-insight-item p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: #374151;
+        }
+        @media (max-width: 1200px) {
+            .patient-detail-body {
+                grid-template-columns: 1fr;
+            }
+        }
+        .detail-card {
+            background: #FFFFFF;
+            border-radius: 0;
+            padding: 1.75rem;
+            box-shadow: none;
+            border: 2px solid #000000;
+        }
+        .detail-card h3 {
+            margin: 0 0 1rem;
+            font-size: 1.3rem;
+            color: #1F2937;
+        }
+        .condition-insights {
+            display: grid;
+            gap: 1.1rem;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            margin-bottom: 1.5rem;
+        }
+        .condition-insight-card {
+            background: #FFFFFF;
+            border-radius: 0;
+            padding: 1.1rem 1.2rem;
+            box-shadow: none;
+            border: 2px solid #000000;
+        }
+        .condition-insight-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .condition-insight-name {
+            font-weight: 600;
+            color: #1F2937;
+            font-size: 1rem;
+        }
+        .condition-score {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #000000;
+            display: flex;
+            align-items: flex-end;
+            gap: 0.2rem;
+            font-family: 'Roboto Mono', monospace;
+        }
+        .condition-score.excellent {
+            color: #10B981;
+        }
+        .condition-score.good {
+            color: #059669;
+        }
+        .condition-score.moderate {
+            color: #F59E0B;
+        }
+        .condition-score.high {
+            color: #EF4444;
+        }
+        .condition-score-max {
+            font-size: 0.85rem;
+            color: #6B7280;
+            font-weight: 500;
+        }
+        .condition-insight-subtitle {
+            color: #4B5563;
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+        }
+        .condition-trajectory {
+            width: 100%;
+        }
+        .care-priorities-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            gap: 0.85rem;
+        }
+        .care-priorities-list li {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+        .care-priority-condition {
+            font-weight: 600;
+            color: #4338CA;
+            font-size: 1rem;
+        }
+        .care-priority-focus {
+            color: #4B5563;
+            font-size: 0.98rem;
+        }
+        .care-action-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            gap: 1rem;
+        }
+        .care-action-list li {
+            background: #FFFFFF;
+            border-radius: 0;
+            padding: 1.25rem 1.4rem;
+            border: 2px solid #000000;
+            box-shadow: none;
+        }
+        .care-action-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 0.6rem;
+        }
+        .care-action-title {
+            font-weight: 600;
+            color: #111827;
+            font-size: 1.05rem;
+        }
+        .care-action-conditions {
+            background: #000000;
+            color: #FFFFFF;
+            padding: 0.35rem 0.85rem;
+            border-radius: 0;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: 2px solid #000000;
+        }
+        .care-action-list p {
+            margin: 0;
+            color: #374151;
+            line-height: 1.6;
+            font-size: 0.98rem;
+        }
+        .care-empty-state {
+            padding: 1.25rem;
+            background: #F9FAFB;
+            border-radius: 0;
+            border: 2px dashed #000000;
+            color: #000000;
+            font-size: 0.98rem;
+        }
+        .close-btn {
+            position: absolute;
+            top: 1.2rem;
+            right: 1.2rem;
+            width: 3rem;
+            height: 3rem;
+            border-radius: 0;
+            border: 2px solid #FFFFFF;
+            background: #000000;
+            color: white;
+            font-size: 1.55rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.2s ease;
+            font-weight: 700;
+        }
+        .close-btn:hover {
+            background: #FFFFFF;
+            color: #000000;
+            box-shadow: 4px 4px 0 0 #000000;
+        }
+        .nav-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #FFFFFF;
+            padding: 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            border-bottom: 2px solid #000000;
+        }
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+            position: relative;
+        }
+        .nav-bar a {
+            color: #000000;
+            text-decoration: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 0;
+            transition: all 0.2s ease;
+            font-weight: 600;
+        }
+        .nav-bar a:hover {
+            background: #F9FAFB;
+            border: 2px solid #000000;
+        }
+        .nav-bar a.active {
+            background: #000000;
+            color: #FFFFFF;
+            border: 2px solid #000000;
+        }
+        .logout-button {
+            position: absolute;
+            right: -120px;
+            background: transparent;
+            padding: 0.8rem 1.5rem;
+            border-radius: 0;
+            color: #000000;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            font-weight: 600;
+            border: 2px solid transparent;
+        }
+        .logout-button:hover {
+            background: #F9FAFB;
+            color: #000000;
+            border: 2px solid #000000;
+        }
+        @media (max-width: 768px) {
+            .dashboard-container { padding: 1rem; }
+            .dashboard-header { flex-direction: column; gap: 1rem; }
+            .invite-section { flex-direction: column; align-items: stretch; }
+            .search-filter-row { flex-direction: column; gap: 0.5rem; }
+            .nav-bar {
+                flex-direction: row;
+                gap: 0.3rem;
+                padding: 0.3rem;
+                background: rgba(0, 0, 0, 0.3);
+            }
+            .nav-links {
+                flex-direction: row;
+                align-items: center;
+                gap: 0.3rem;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .nav-bar a {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.8rem;
+                border-radius: 15px;
+            }
+            .logout-button {
+                position: static;
+                margin-top: 0;
+                padding: 0.4rem 0.8rem;
+                font-size: 0.8rem;
+            }
+            
+            /* Mobile improvements for patient detail modal */
+            .patient-detail-content {
+                padding: 1rem;
+                max-height: 95vh;
+            }
+            
+            .irscore-history-details {
+                grid-template-columns: 1fr;
+                gap: 0.25rem;
+            }
+            
+            .irscore-history-item {
+                padding: 0.75rem;
+            }
+            
+            .irscore-history-content {
+                max-height: 300px;
+            }
+        }
+        /* Modern Popup Modal Styles (copied from irscore.html) */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            backdrop-filter: blur(5px);
+        }
+        .popup-modal {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            animation: popupSlideIn 0.3s ease-out;
+        }
+        @keyframes popupSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        .popup-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1F2937;
+            margin-bottom: 1rem;
+        }
+        .popup-message {
+            color: #6B7280;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+        .popup-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+        .popup-button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 100px;
+        }
+        .popup-button.primary {
+            background: #000000;
+            color: white;
+            border: 2px solid #000000;
+        }
+        .popup-button.primary:hover {
+            background: #FFFFFF;
+            color: #000000;
+            box-shadow: 4px 4px 0 0 #000000;
+        }
+        .popup-button.secondary {
+            background: #E5E7EB;
+            color: #4B5563;
+        }
+        .popup-button.secondary:hover {
+            background: #D1D5DB;
+        }
+        .popup-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+        .popup-icon svg {
+            width: 2.6rem;
+            height: 2.6rem;
+        }
+        .popup-icon--success svg { color: #10B981; }
+        .popup-icon--error svg { color: #EF4444; }
+        .popup-icon--warning svg { color: #F59E0B; }
+        .popup-icon--info svg { color: #3B82F6; }
+        
+        /* Animation keyframes */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav-bar" id="main-nav">
+        <div class="nav-links" id="nav-links"></div>
+    </nav>
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <h1 class="dashboard-title">Welcome back, <span id="dashboard-user">Om</span>.</h1>
+            <p class="dashboard-subtitle">Here is the latest snapshot of your patient cohort.</p>
+            <div class="invite-section">
+            </div>
+        </div>
+        <div class="histogram-section">
+            <canvas id="histogramChart" height="80"></canvas>
+        </div>
+        <div class="search-filter-row">
+            <input type="text" id="search-input" placeholder="Search by name or health condition">
+            <select id="health-filter">
+                <option value="">All Conditions</option>
+                <option value="diabetes">Diabetes</option>
+                <option value="parkinsons">Parkinson's</option>
+                <option value="hypertension">Hypertension</option>
+                <option value="asthma">Asthma</option>
+                <option value="arthritis">Arthritis</option>
+                <option value="heart-disease">Heart Disease</option>
+            </select>
+        </div>
+        <table class="patient-list" id="patient-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Possible Health Conditions</th>
+                    <th>Overall Risk Score</th>
+                    <th class="actions-col">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="patient-tbody">
+                <tr>
+                    <td><strong>John Doe</strong></td>
+                    <td>john@example.com</td>
+                    <td>
+                        <div class="health-tags-container">
+                            <span class="health-tag" data-condition="diabetes">
+                                Diabetes
+                                <button class="tag-remove" onclick="event.stopPropagation(); window.removeHealthCondition && window.removeHealthCondition('1','diabetes')" aria-label="Remove Diabetes"><svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                            </span>
+                            <span class="health-tag" data-condition="hypertension">
+                                Hypertension
+                                <button class="tag-remove" onclick="event.stopPropagation(); window.removeHealthCondition && window.removeHealthCondition('1','hypertension')" aria-label="Remove Hypertension"><svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                            </span>
+                            <button class="add-tag-btn" onclick="event.stopPropagation(); window.showAddTagModal && window.showAddTagModal('1')" title="Add condition">
+                                <span>+</span>
+                            </button>
+                        </div>
+                    </td>
+                    <td class="actions-col">
+                        <button class="action-btn view-btn" onclick="event.stopPropagation(); window.showPatientDetail && window.showPatientDetail('1')" title="View Details" aria-label="View details">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.036 12.322a1.012 1.012 0 010-.644C3.423 7.88 7.36 5.25 12 5.25c4.64 0 8.577 2.63 9.964 6.428.07.21.07.434 0 .644C20.577 16.12 16.64 18.75 12 18.75c-4.64 0-8.577-2.63-9.964-6.428z" /><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                            <span>View Details</span>
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Jane Smith</strong></td>
+                    <td>jane@example.com</td>
+                    <td>
+                        <div class="health-tags-container">
+                            <span class="health-tag" data-condition="parkinsons">
+                                Parkinson's
+                                <button class="tag-remove" onclick="event.stopPropagation(); window.removeHealthCondition && window.removeHealthCondition('2','parkinsons')" aria-label="Remove Parkinson's"><svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                            </span>
+                            <span class="health-tag" data-condition="arthritis">
+                                Arthritis
+                                <button class="tag-remove" onclick="event.stopPropagation(); window.removeHealthCondition && window.removeHealthCondition('2','arthritis')" aria-label="Remove Arthritis"><svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                            </span>
+                            <button class="add-tag-btn" onclick="event.stopPropagation(); window.showAddTagModal && window.showAddTagModal('2')" title="Add condition">
+                                <span>+</span>
+                            </button>
+                        </div>
+                    </td>
+                    <td class="actions-col">
+                        <button class="action-btn view-btn" onclick="event.stopPropagation(); window.showPatientDetail && window.showPatientDetail('2')" title="View Details" aria-label="View details">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.036 12.322a1.012 1.012 0 010-.644C3.423 7.88 7.36 5.25 12 5.25c4.64 0 8.577 2.63 9.964 6.428.07.21.07.434 0 .644C20.577 16.12 16.64 18.75 12 18.75c-4.64 0-8.577-2.63-9.964-6.428z" /><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                            <span>View Details</span>
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Bob Johnson</strong></td>
+                    <td>bob@example.com</td>
+                    <td>
+                        <div class="health-tags-container">
+                            <span class="health-tag" data-condition="asthma">
+                                Asthma
+                                <button class="tag-remove" onclick="event.stopPropagation(); window.removeHealthCondition && window.removeHealthCondition('3','asthma')" aria-label="Remove Asthma"><svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                            </span>
+                            <button class="add-tag-btn" onclick="event.stopPropagation(); window.showAddTagModal && window.showAddTagModal('3')" title="Add condition">
+                                <span>+</span>
+                            </button>
+                        </div>
+                    </td>
+                    <td class="actions-col">
+                        <button class="action-btn view-btn" onclick="event.stopPropagation(); window.showPatientDetail && window.showPatientDetail('3')" title="View Details" aria-label="View details">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.036 12.322a1.012 1.012 0 010-.644C3.423 7.88 7.36 5.25 12 5.25c4.64 0 8.577 2.63 9.964 6.428.07.21.07.434 0 .644C20.577 16.12 16.64 18.75 12 18.75c-4.64 0-8.577-2.63-9.964-6.428z" /><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                            <span>View Details</span>
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Alice Williams</strong></td>
+                    <td>alice@example.com</td>
+                    <td>
+                        <div class="health-tags-container">
+                            <span class="health-tag" data-condition="heart-disease">
+                                Heart Disease
+                                <button class="tag-remove" onclick="event.stopPropagation(); window.removeHealthCondition && window.removeHealthCondition('4','heart-disease')" aria-label="Remove Heart Disease"><svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                            </span>
+                            <span class="health-tag" data-condition="diabetes">
+                                Diabetes
+                                <button class="tag-remove" onclick="event.stopPropagation(); window.removeHealthCondition && window.removeHealthCondition('4','diabetes')" aria-label="Remove Diabetes"><svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                            </span>
+                            <span class="health-tag" data-condition="hypertension">
+                                Hypertension
+                                <button class="tag-remove" onclick="event.stopPropagation(); window.removeHealthCondition && window.removeHealthCondition('4','hypertension')" aria-label="Remove Hypertension"><svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                            </span>
+                            <button class="add-tag-btn" onclick="event.stopPropagation(); window.showAddTagModal && window.showAddTagModal('4')" title="Add condition">
+                                <span>+</span>
+                            </button>
+                        </div>
+                    </td>
+                    <td class="actions-col">
+                        <button class="action-btn view-btn" onclick="event.stopPropagation(); window.showPatientDetail && window.showPatientDetail('4')" title="View Details" aria-label="View details">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.036 12.322a1.012 1.012 0 010-.644C3.423 7.88 7.36 5.25 12 5.25c4.64 0 8.577 2.63 9.964 6.428.07.21.07.434 0 .644C20.577 16.12 16.64 18.75 12 18.75c-4.64 0-8.577-2.63-9.964-6.428z" /><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                            <span>View Details</span>
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Michael Brown</strong></td>
+                    <td>michael@example.com</td>
+                    <td>
+                        <div class="health-tags-container">
+                            <span class="health-tag" data-condition="arthritis">
+                                Arthritis
+                                <button class="tag-remove" onclick="event.stopPropagation(); window.removeHealthCondition && window.removeHealthCondition('5','arthritis')" aria-label="Remove Arthritis"><svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                            </span>
+                            <button class="add-tag-btn" onclick="event.stopPropagation(); window.showAddTagModal && window.showAddTagModal('5')" title="Add condition">
+                                <span>+</span>
+                            </button>
+                        </div>
+                    </td>
+                    <td class="actions-col">
+                        <button class="action-btn view-btn" onclick="event.stopPropagation(); window.showPatientDetail && window.showPatientDetail('5')" title="View Details" aria-label="View details">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.036 12.322a1.012 1.012 0 010-.644C3.423 7.88 7.36 5.25 12 5.25c4.64 0 8.577 2.63 9.964 6.428.07.21.07.434 0 .644C20.577 16.12 16.64 18.75 12 18.75c-4.64 0-8.577-2.63-9.964-6.428z" /><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                            <span>View Details</span>
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Sarah Davis</strong></td>
+                    <td>sarah@example.com</td>
+                    <td>
+                        <div class="health-tags-container">
+                            <span class="health-tag" data-condition="asthma">
+                                Asthma
+                                <button class="tag-remove" onclick="event.stopPropagation(); window.removeHealthCondition && window.removeHealthCondition('6','asthma')" aria-label="Remove Asthma"><svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                            </span>
+                            <span class="health-tag" data-condition="hypertension">
+                                Hypertension
+                                <button class="tag-remove" onclick="event.stopPropagation(); window.removeHealthCondition && window.removeHealthCondition('6','hypertension')" aria-label="Remove Hypertension"><svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                            </span>
+                            <button class="add-tag-btn" onclick="event.stopPropagation(); window.showAddTagModal && window.showAddTagModal('6')" title="Add condition">
+                                <span>+</span>
+                            </button>
+                        </div>
+                    </td>
+                    <td class="actions-col">
+                        <button class="action-btn view-btn" onclick="event.stopPropagation(); window.showPatientDetail && window.showPatientDetail('6')" title="View Details" aria-label="View details">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.036 12.322a1.012 1.012 0 010-.644C3.423 7.88 7.36 5.25 12 5.25c4.64 0 8.577 2.63 9.964 6.428.07.21.07.434 0 .644C20.577 16.12 16.64 18.75 12 18.75c-4.64 0-8.577-2.63-9.964-6.428z" /><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                            <span>View Details</span>
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div id="patient-detail-modal" class="patient-detail-modal" style="display:none;">
+        <div class="patient-detail-content">
+            <div id="patient-detail-content"></div>
+        </div>
+    </div>
+    <!-- Modern Popup Modal -->
+    <div class="popup-overlay" id="popup-overlay" style="display:none;">
+        <div class="popup-modal">
+            <div class="popup-icon" id="popup-icon" aria-hidden="true"></div>
+            <div class="popup-title" id="popup-title">Title</div>
+            <div class="popup-message" id="popup-message">Message</div>
+            <div class="popup-buttons" id="popup-buttons">
+                <button class="popup-button primary" onclick="closePopup()">OK</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        const ICONS = {
+            info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11.25 11.25h1.5v5.25h-1.5z" /><path d="M12 8.25h.008v.008H12V8.25z" /><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
+            success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12.75l2.25 2.25L15 11.25" /><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
+            error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.75 9.75l4.5 4.5" /><path d="M14.25 9.75l-4.5 4.5" /><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
+            warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8.25v4.5" /><path d="M12 16.5h.007" /><path d="M10.29 3.86a1.125 1.125 0 011.92 0l8.154 14.508A1.125 1.125 0 0119.404 20.25H4.596a1.125 1.125 0 01-.96-1.882L10.29 3.86z" /></svg>',
+            eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.036 12.322a1.012 1.012 0 010-.644C3.423 7.88 7.36 5.25 12 5.25c4.64 0 8.577 2.63 9.964 6.428.07.21.07.434 0 .644C20.577 16.12 16.64 18.75 12 18.75c-4.64 0-8.577-2.63-9.964-6.428z" /><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>'
+        };
+
+        const AUTH_KEY = 'nf_clinician_auth';
+        const NAME_KEY = 'nf_user_name';
+        let histogramChart = null;
+        let conditionTrajectoryCharts = [];
+
+        // SMART on FHIR configuration
+        const SMART_CONFIG = {
+            clientId: 'YOUR_SMART_CLIENT_ID',
+            scope: 'launch/patient patient/*.read openid profile',
+            redirectUri: window.location.origin + window.location.pathname
+        };
+        const NF_FHIR_CONNECTED_KEY = 'nf_fhir_connected';
+        const NF_FHIR_ISS_KEY = 'nf_fhir_iss';
+        window.nfFhirClient = null;
+
+        // Helper functions for trend badges and exports
+        function computeTrendLabel(trajectory) {
+            const t = Array.isArray(trajectory) ? trajectory.filter(v => typeof v === 'number') : [];
+            if (t.length < 2) return 'stable';
+            const delta = t[t.length - 1] - t[0];
+            if (delta >= 8) return 'rising';
+            if (delta <= -8) return 'falling';
+            return 'stable';
+        }
+        function trendColor(label) {
+            if (label === 'rising') return '#EF4444';
+            if (label === 'falling') return '#10B981';
+            return '#374151';
+        }
+        function buildPatientSummaryCSV(patient, trajectoryData, actionsByDisease) {
+            const header = ['patient_id','patient_name','condition','current_score','week0','week1','week2','week3','week4','week5','recommendations'].join(',');
+            const rows = trajectoryData.map(data => {
+                const cond = data.metric.key;
+                const label = data.metric.label;
+                const score = data.metric.score;
+                const traj = Array.isArray(data.trajectory) ? data.trajectory.slice(0, 6) : [];
+                const recs = (actionsByDisease.get(cond)?.recommendations || []).map(r => `${r.title}${r.impact ? ` (${r.impact})` : ''}`).join(' | ');
+                const vals = [
+                    patient.id,
+                    `"${patient.name}"`,
+                    `"${label}"`,
+                    score,
+                    traj[0] ?? '',
+                    traj[1] ?? '',
+                    traj[2] ?? '',
+                    traj[3] ?? '',
+                    traj[4] ?? '',
+                    traj[5] ?? '',
+                    `"${recs}"`
+                ];
+                return vals.join(',');
+            });
+            return [header, ...rows].join('\n');
+        }
+        function openPrintSummary(patient, trajectoryData, actionsByDisease) {
+            const html = `
+            <html>
+            <head><title>Patient Summary - ${patient.name}</title></head>
+            <body style="font-family: Arial, sans-serif; color: #111; padding: 24px;">
+                <h1 style="margin-top:0;">Patient Summary</h1>
+                <div><strong>ID:</strong> ${patient.id}</div>
+                <div><strong>Name:</strong> ${patient.name}</div>
+                <hr style="margin: 16px 0; border: 0; border-top: 2px solid #000;">
+                ${trajectoryData.map(d => {
+                    const traj = Array.isArray(d.trajectory) ? d.trajectory.slice(0, 6) : [];
+                    const trend = computeTrendLabel(traj);
+                    const recs = (actionsByDisease.get(d.metric.key)?.recommendations || []);
+                    return `
+                    <h2 style="margin: 16px 0 8px;">${d.metric.label}</h2>
+                    <div><strong>Current Risk:</strong> ${d.metric.score}/100</div>
+                    <div><strong>Trend:</strong> ${trend}</div>
+                    <table cellspacing="0" cellpadding="6" style="margin-top:8px; border-collapse: collapse; border: 2px solid #000;">
+                        <thead>
+                            <tr>
+                                <th style="border: 2px solid #000;">Week</th>
+                                <th style="border: 2px solid #000;">Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${traj.map((v, i) => `<tr><td style="border: 2px solid #000;">${i}</td><td style="border: 2px solid #000;">${typeof v === 'number' ? v : ''}</td></tr>`).join('')}
+                        </tbody>
+                    </table>
+                    ${recs.length ? `
+                    <div style="margin-top: 8px;"><strong>Recommendations:</strong></div>
+                    <ul style="margin-top: 4px;">
+                        ${recs.map(r => `<li>${r.title}${r.impact ? ` (${r.impact})` : ''}${r.note ? ` — ${r.note}` : ''}</li>`).join('')}
+                    </ul>
+                    ` : ''}
+                    `;
+                }).join('')}
+            </body>
+            </html>`;
+            const w = window.open('', '_blank');
+            w.document.write(html);
+            w.document.close();
+            w.focus();
+            w.print();
+        }
+
+        const mockPatientsData = [
+            { id: '1', name: 'John Doe', email: 'john@example.com', healthConditions: ['diabetes', 'hypertension'] },
+            { id: '2', name: 'Jane Smith', email: 'jane@example.com', healthConditions: ['parkinsons', 'arthritis'] },
+            { id: '3', name: 'Bob Johnson', email: 'bob@example.com', healthConditions: ['asthma'] },
+            { id: '4', name: 'Alice Williams', email: 'alice@example.com', healthConditions: ['heart-disease', 'diabetes', 'hypertension'] },
+            { id: '5', name: 'Michael Brown', email: 'michael@example.com', healthConditions: ['arthritis'] },
+            { id: '6', name: 'Sarah Davis', email: 'sarah@example.com', healthConditions: ['asthma', 'hypertension'] }
+        ];
+
+        const conditionCarePlans = {
+            'diabetes': {
+                focus: 'Glucose management and lifestyle coaching',
+                actions: [
+                    { title: 'Review glucose trends', note: 'Check weekly glucose logs and adjust medication if averages > 140 mg/dL.' },
+                    { title: 'Coordinate nutrition check-in', note: 'Schedule a 1:1 with the dietitian to reinforce carbohydrate counting.' },
+                    { title: 'Foot exam reminder', note: 'Add reminder for routine foot exam within the next 60 days.' }
+                ]
+            },
+            'parkinsons': {
+                focus: 'Motor stability and fall prevention',
+                actions: [
+                    { title: 'Physical therapy tune-up', note: 'Book a mobility session to reinforce balance exercises.' },
+                    { title: 'Medication adherence review', note: 'Confirm timing and dosing of levodopa to minimize wearing-off periods.' },
+                    { title: 'Care partner briefing', note: 'Share updated symptom diary with caregiver ahead of next neurologist visit.' }
+                ]
+            },
+            'hypertension': {
+                focus: 'Blood pressure control and monitoring',
+                actions: [
+                    { title: 'Home BP log upload', note: 'Request a new home blood-pressure log covering the last two weeks.' },
+                    { title: 'Medication sync', note: 'Verify refill dates for ACE inhibitor / ARB and renew if within 7 days.' },
+                    { title: 'Lifestyle reinforcement', note: 'Send DASH diet micro-course and confirm walking routine adherence.' }
+                ]
+            },
+            'asthma': {
+                focus: 'Airway stability and trigger avoidance',
+                actions: [
+                    { title: 'Inhaler technique check', note: 'Schedule a telehealth teach-back to confirm proper spacer use.' },
+                    { title: 'Environmental review', note: 'Update allergen exposure checklist and note any seasonal changes.' },
+                    { title: 'Action plan refresh', note: 'Email written asthma action plan with updated peak-flow zones.' }
+                ]
+            },
+            'arthritis': {
+                focus: 'Pain control and joint preservation',
+                actions: [
+                    { title: 'Activity pacing plan', note: 'Provide joint-friendly exercise handout and set weekly movement goals.' },
+                    { title: 'Anti-inflammatory review', note: 'Check NSAID usage and flag any GI risk factors for pharmacist consult.' },
+                    { title: 'Assistive device audit', note: 'Ask patient if braces or supports need replacement or adjustment.' }
+                ]
+            },
+            'heart-disease': {
+                focus: 'Cardiac risk reduction',
+                actions: [
+                    { title: 'Cardiology follow-up', note: 'Confirm upcoming cardiology appointment or schedule within 30 days.' },
+                    { title: 'Medication reconciliation', note: 'Review statin, beta blocker, and antiplatelet adherence.' },
+                    { title: 'Lifestyle milestones', note: 'Track weekly exercise minutes and reinforce sodium limits (<2g/day).' }
+                ]
+            },
+            'no-conditions': {
+                focus: 'Preventive wellness',
+                actions: [
+                    { title: 'Lifestyle snapshot', note: 'Capture latest vitals, BMI, and lifestyle survey to maintain baseline.' },
+                    { title: 'Annual screening review', note: 'Check age-appropriate screenings (lipids, colonoscopy, vaccines).' },
+                    { title: 'Wellness goals', note: 'Collaboratively set a new quarterly wellbeing goal with the patient.' }
+                ]
+            }
+        };
+        
+
+        // Seeded synthetic wearable metrics for consistency if clinic has no real ingest yet
+        function getPatientMetrics(patient) {
+            const idSeed = parseInt(patient.id, 10) || 1;
+            let rnd = idSeed * 9301 + 49297;
+            function next(min, max) {
+                rnd = (rnd * 9301 + 49297) % 233280;
+                const t = rnd / 233280;
+                return Math.round(min + t * (max - min));
+            }
+            function nextFloat(min, max) {
+                rnd = (rnd * 9301 + 49297) % 233280;
+                const t = rnd / 233280;
+                return min + t * (max - min);
+            }
+
+            // If real metrics exist (patient.metrics), use them; else generate seeded synthetic
+            const m = patient.metrics || {};
+            const metrics = {
+                // Common
+                age: m.age ?? next(35, 75),
+                sex: m.sex ?? (next(0, 1) ? 'male' : 'female'),
+                bmi: m.bmi ?? nextFloat(22, 35),
+                stepsDaily: m.stepsDaily ?? next(2500, 12000),
+                sleepEfficiency: m.sleepEfficiency ?? nextFloat(75, 95),
+                sleepDurationHours: m.sleepDurationHours ?? nextFloat(5.5, 8.5),
+                restingHR: m.restingHR ?? next(58, 85),
+                vo2max: m.vo2max ?? nextFloat(28, 50),
+                smoker: m.smoker ?? !!(next(0, 10) > 8),
+
+                // BP
+                bpSystolic: m.bpSystolic ?? next(115, 155),
+                bpDiastolic: m.bpDiastolic ?? next(75, 95),
+                sodiumIntakeMg: m.sodiumIntakeMg ?? next(1800, 3500),
+                alcoholUnitsWeekly: m.alcoholUnitsWeekly ?? next(0, 20),
+
+                // Lipids
+                ldl: m.ldl ?? next(90, 170),
+                hdl: m.hdl ?? next(35, 65),
+                triglycerides: m.triglycerides ?? next(100, 250),
+
+                // Diabetes
+                hba1c: m.hba1c ?? nextFloat(5.2, 6.8),
+                avgGlucoseMgDl: m.avgGlucoseMgDl ?? next(95, 140),
+                familyHistoryDiabetes: m.familyHistoryDiabetes ?? (['none', 'distant', 'close', 'multiple'][next(0, 3)]),
+
+                // Asthma proxies
+                spo2: m.spo2 ?? next(92, 98),
+                respRate: m.respRate ?? next(12, 22),
+
+                // Arthritis
+                jointPainScore: m.jointPainScore ?? nextFloat(1, 6),
+
+                // Parkinson’s
+                gaitStabilityScore: m.gaitStabilityScore ?? nextFloat(65, 90),
+                tremorEpisodesWeekly: m.tremorEpisodesWeekly ?? next(0, 12),
+
+                // Comorbidity hint for heart disease
+                hasDiabetes: (patient.healthConditions || []).includes('diabetes')
+            };
+
+            // Normalize to plausible clinical ranges
+            metrics.stepsDaily = Math.max(0, Math.min(30000, Number(metrics.stepsDaily) || 0));
+            metrics.sleepEfficiency = Math.max(50, Math.min(100, Number(metrics.sleepEfficiency) || 0));
+            metrics.sleepDurationHours = Math.max(3, Math.min(14, Number(metrics.sleepDurationHours) || 0));
+            metrics.restingHR = Math.max(40, Math.min(120, Number(metrics.restingHR) || 0));
+            metrics.vo2max = Math.max(10, Math.min(80, Number(metrics.vo2max) || 0));
+            metrics.bpSystolic = Math.max(80, Math.min(220, Number(metrics.bpSystolic) || 0));
+            metrics.bpDiastolic = Math.max(40, Math.min(130, Number(metrics.bpDiastolic) || 0));
+            metrics.sodiumIntakeMg = Math.max(500, Math.min(7000, Number(metrics.sodiumIntakeMg) || 0));
+            metrics.alcoholUnitsWeekly = Math.max(0, Math.min(60, Number(metrics.alcoholUnitsWeekly) || 0));
+            metrics.ldl = Math.max(40, Math.min(300, Number(metrics.ldl) || 0));
+            metrics.hdl = Math.max(20, Math.min(120, Number(metrics.hdl) || 0));
+            metrics.triglycerides = Math.max(40, Math.min(1000, Number(metrics.triglycerides) || 0));
+            metrics.hba1c = Math.max(3.5, Math.min(15, Number(metrics.hba1c) || 0));
+            metrics.avgGlucoseMgDl = Math.max(60, Math.min(400, Number(metrics.avgGlucoseMgDl) || 0));
+            metrics.spo2 = Math.max(70, Math.min(100, Number(metrics.spo2) || 0));
+            metrics.respRate = Math.max(6, Math.min(40, Number(metrics.respRate) || 0));
+            metrics.jointPainScore = Math.max(0, Math.min(10, Number(metrics.jointPainScore) || 0));
+            metrics.gaitStabilityScore = Math.max(0, Math.min(100, Number(metrics.gaitStabilityScore) || 0));
+            metrics.tremorEpisodesWeekly = Math.max(0, Math.min(200, Number(metrics.tremorEpisodesWeekly) || 0));
+
+            return metrics;
+        }
+
+        // Replace random scoring with deterministic rubric
+        function generateConditionScore(patient, condition) {
+            const metrics = getPatientMetrics(patient);
+            return window.NF_RiskModel.computeDiseaseRisk(condition, metrics);
+        }
+
+        function ensureConditionScore(patient, condition) {
+            // Respect cached scores if set (e.g., from AI), otherwise compute via rubric
+            const key = (condition || '').toString().toLowerCase();
+            patient.conditionScores = patient.conditionScores || {};
+            if (typeof patient.conditionScores[key] !== 'number') {
+                patient.conditionScores[key] = generateConditionScore(patient, key);
+            }
+            return patient.conditionScores[key];
+        }
+
+        function initializePatientMetrics(patients) {
+            patients.forEach(patient => {
+                const conditions = Array.isArray(patient.healthConditions) ? patient.healthConditions : [];
+                conditions.forEach(condition => ensureConditionScore(patient, condition));
+            });
+        }
+
+        function getPatientConditionScore(patient, condition) {
+            return ensureConditionScore(patient, condition);
+        }
+
+        function getRiskScoreClass(score) {
+            // Lower is better
+            if (score <= 20) return 'excellent';
+            if (score <= 40) return 'good';
+            if (score <= 60) return 'moderate';
+            return 'high';
+        }
+
+        function getRiskScoreColor(score) {
+            const cls = getRiskScoreClass(score);
+            const colors = {
+                excellent: '#10B981',
+                good: '#059669',
+                moderate: '#F59E0B',
+                high: '#EF4444'
+            };
+            return colors[cls] || '#000000';
+        }
+
+        function calculateOverallRiskScore(conditionMetrics) {
+            if (!conditionMetrics || conditionMetrics.length === 0) return null;
+            const sum = conditionMetrics.reduce((acc, metric) => acc + metric.score, 0);
+            return Math.round(sum / conditionMetrics.length);
+        }
+
+        function generateTrajectoryInsights(baseScore, condition, trajectory) {
+            const insights = [];
+            // Use provided trajectory or generate one
+            const traj = trajectory || generateTrajectory(baseScore);
+            
+            // Find the peak in future weeks only (index > 0)
+            let maxScore = traj[0]; // Start with current score
+            let maxIndex = 0;
+            
+            for (let i = 1; i < traj.length; i++) {
+                if (traj[i] > maxScore) {
+                    maxScore = traj[i];
+                    maxIndex = i;
+                }
+            }
+            
+            // Only show peak if it's in the future and higher than base
+            if (maxScore > baseScore && maxIndex > 0) {
+                const conditionName = formatConditionName(condition);
+                let fixInstructions = '';
+                
+                // Provide specific fix instructions based on condition
+                switch(condition.toLowerCase()) {
+                    case 'diabetes':
+                        fixInstructions = `To prevent this peak: 1) Reduce daily carbohydrate intake to 45-60g per meal, 2) Increase physical activity to 150 minutes/week, 3) Monitor blood glucose 3x daily and adjust medication timing if needed, 4) Schedule immediate follow-up with endocrinologist if score exceeds 70.`;
+                        break;
+                    case 'hypertension':
+                        fixInstructions = `To prevent this peak: 1) Reduce sodium intake to <2g/day, 2) Implement DASH diet principles (increase fruits/vegetables, whole grains), 3) Take blood pressure readings twice daily at same times, 4) Ensure medication compliance - set phone reminders, 5) Reduce stress through daily 10-minute meditation.`;
+                        break;
+                    case 'heart-disease':
+                        fixInstructions = `To prevent this peak: 1) Maintain strict medication adherence (statin, beta-blocker, antiplatelet), 2) Limit saturated fat to <7% of daily calories, 3) Perform 30 minutes moderate exercise 5x/week, 4) Monitor for chest pain or shortness of breath, 5) Schedule cardiology appointment within 2 weeks if score trends upward.`;
+                        break;
+                    case 'asthma':
+                        fixInstructions = `To prevent this peak: 1) Use rescue inhaler 15 minutes before exercise, 2) Identify and avoid triggers (pollen, dust, pet dander), 3) Review inhaler technique with pharmacist, 4) Keep peak flow meter readings daily, 5) Ensure controller medication is taken consistently even when feeling well.`;
+                        break;
+                    case 'arthritis':
+                        fixInstructions = `To prevent this peak: 1) Apply heat/cold therapy 20 minutes 2x daily, 2) Practice joint-friendly exercises (swimming, cycling) 3x/week, 3) Take NSAIDs with food to reduce GI risk, 4) Use assistive devices (braces, canes) as recommended, 5) Maintain healthy weight to reduce joint stress.`;
+                        break;
+                    case 'parkinsons':
+                        fixInstructions = `To prevent this peak: 1) Take levodopa exactly as prescribed - timing is critical, 2) Schedule physical therapy for balance and mobility exercises, 3) Monitor for medication "wearing off" periods, 4) Ensure adequate sleep (7-8 hours), 5) Coordinate with neurologist to adjust medication timing if symptoms worsen.`;
+                        break;
+                    default:
+                        fixInstructions = `To prevent this peak: 1) Follow prescribed treatment plan consistently, 2) Monitor symptoms daily and document changes, 3) Maintain regular follow-up appointments, 4) Implement lifestyle modifications as recommended by your care team, 5) Contact your clinician immediately if score exceeds 70.`;
+                }
+                
+                // Format week label to match chart (Now, +1w, +2w, etc.)
+                const weekLabel = maxIndex === 0 ? 'Now' : `+${maxIndex}w`;
+                
+                insights.push({
+                    type: 'peak',
+                    time: weekLabel,
+                    weekIndex: maxIndex,
+                    score: maxScore,
+                    description: `<svg style="display: inline-block; width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Projected risk peak to ${maxScore} at ${weekLabel}.`,
+                    fixInstructions: fixInstructions
+                });
+            }
+            
+            // Add general recommendations for high scores
+            if (baseScore > 60) {
+                insights.push({
+                    type: 'recommendation',
+                    description: `Current score of ${baseScore} indicates elevated risk. Immediate intervention recommended.`
+                });
+            }
+            
+            return insights;
+        }
+
+        function generateTrajectory(baseScore) {
+            // Use a seeded random approach based on baseScore for consistency
+            // This ensures the same baseScore produces the same trajectory
+            const seed = baseScore * 12345;
+            let random = seed;
+            
+            function seededRandom() {
+                random = (random * 9301 + 49297) % 233280;
+                return random / 233280;
+            }
+            
+            const points = [baseScore];
+            
+            // Generate trajectory with more realistic patterns
+            // Higher base scores should have more variability and potential for peaks
+            for (let i = 1; i < 6; i++) {
+                const previous = points[i - 1];
+                
+                // Create drift based on base score - higher scores trend upward more
+                let baseDrift;
+                if (baseScore < 25) {
+                    baseDrift = 1 + (seededRandom() * 3); // Small upward drift
+                } else if (baseScore < 50) {
+                    baseDrift = 2 + (seededRandom() * 5); // Moderate drift
+                } else if (baseScore < 75) {
+                    baseDrift = 3 + (seededRandom() * 7); // Higher drift with more variability
+                } else {
+                    baseDrift = 4 + (seededRandom() * 8); // Significant upward trend
+                }
+                
+                // Add some randomness but ensure it's within bounds
+                const randomVariation = (seededRandom() * 6) - 3; // -3 to +3
+                const drift = Math.round(baseDrift + randomVariation);
+                const next = Math.max(0, Math.min(100, previous + drift));
+                points.push(next);
+            }
+            
+            return points;
+        }
+
+        function destroyConditionCharts() {
+            conditionTrajectoryCharts.forEach(chart => chart.destroy());
+            conditionTrajectoryCharts = [];
+        }
+
+        function createTrajectoryChart(canvasId, baseScore, trajectory) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas || typeof Chart === 'undefined') {
+                return null;
+            }
+            // Use provided trajectory or generate one
+            const traj = trajectory || generateTrajectory(baseScore);
+            const labels = traj.map((_, index) => index === 0 ? 'Now' : `+${index}w`);
+            const riskColor = getRiskScoreColor(baseScore);
+            
+            // Find peak for highlighting
+            let maxScore = Math.max(...traj);
+            let maxIndex = traj.indexOf(maxScore);
+            
+            // Create point arrays for styling (Chart.js needs arrays for per-point styling)
+            const pointRadiusArray = traj.map((_, idx) => idx === maxIndex && maxIndex > 0 ? 7 : 5);
+            const pointBackgroundColorArray = traj.map((_, idx) => idx === maxIndex && maxIndex > 0 ? '#EF4444' : '#000000');
+            
+            const ctx = canvas.getContext('2d');
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Projected Score',
+                        data: traj,
+                        borderColor: '#000000',
+                        backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: pointRadiusArray,
+                        pointBackgroundColor: pointBackgroundColorArray,
+                        pointBorderColor: '#FFFFFF',
+                        pointBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#000000',
+                            titleColor: '#FFFFFF',
+                            bodyColor: '#FFFFFF',
+                            borderColor: '#000000',
+                            borderWidth: 2,
+                            callbacks: {
+                                label: context => `Score: ${context.parsed.y} / 100`
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 100,
+                            ticks: {
+                                color: '#000000',
+                                font: {
+                                    family: 'Inter',
+                                    weight: 600
+                                }
+                            },
+                            grid: {
+                                color: '#E5E7EB',
+                                lineWidth: 1
+                            },
+                            border: {
+                                color: '#000000',
+                                width: 2
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#000000',
+                                font: {
+                                    family: 'Inter',
+                                    weight: 600
+                                }
+                            },
+                            grid: {
+                                color: '#E5E7EB',
+                                lineWidth: 1
+                            },
+                            border: {
+                                color: '#000000',
+                                width: 2
+                            }
+                        }
+                    }
+                }
+            });
+            conditionTrajectoryCharts.push(chart);
+            return traj; // Return trajectory for use in insights
+        }
+
+        function detectTrajectoryPeak(trajectory, threshold = 0) {
+            if (!Array.isArray(trajectory) || trajectory.length === 0) return null;
+            const maxVal = Math.max(...trajectory);
+            const idx = trajectory.indexOf(maxVal);
+            if (idx <= 0 || maxVal < threshold) return null;
+            return { weekIndex: idx, value: maxVal };
+        }
+
+        function renderPeakAdvice(condition, canvasId, peakInfo, advice = {}) {
+            const canvasEl = document.getElementById(canvasId);
+            const cardEl = canvasEl ? canvasEl.closest('.trajectory-detail-card') : null;
+            if (!cardEl) return;
+            let insightsEl = cardEl.querySelector('.trajectory-insights');
+            if (!insightsEl) {
+                insightsEl = document.createElement('div');
+                insightsEl.className = 'trajectory-insights';
+                cardEl.appendChild(insightsEl);
+            }
+            const weekLabel = peakInfo.weekIndex === 0 ? 'Now' : `+${peakInfo.weekIndex}w`;
+            const adviceMarkup = `
+                <div class="trajectory-insight-item">
+                    <h5><svg style="display: inline-block; width: 18px; height: 18px; vertical-align: middle; margin-right: 6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12.75l2.25 2.25L15 11.25"></path><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"></path></svg> ${advice.title || 'AI Peak Advice'}</h5>
+                    <p>Projected risk peak to ${Math.round(peakInfo.value)} at ${weekLabel}. ${advice.description || ''}</p>
+                </div>
+            `;
+            insightsEl.insertAdjacentHTML('beforeend', adviceMarkup);
+        }
+
+        initializePatientMetrics(mockPatientsData);
+
+        function ensureAuthenticated() {
+            if (sessionStorage.getItem(AUTH_KEY) === 'true') {
+                return true;
+            }
+            window.location.replace('index.html');
+            return false;
+        }
+
+        function setWelcomeName() {
+            const storedName = sessionStorage.getItem(NAME_KEY) || 'Om Guin';
+            const target = document.getElementById('dashboard-user');
+            if (!target) return;
+            const firstName = storedName.trim().split(' ')[0] || storedName;
+            target.textContent = firstName;
+        }
+
+        function renderNavBar() {
+            const navLinks = document.getElementById('nav-links');
+            if (!navLinks) return;
+            navLinks.innerHTML = `
+                <a href="clinical-dashboard.html" class="active">Dashboard</a>
+                <a href="#" class="logout-button" onclick="handleLogout(event)">Logout</a>
+            `;
+        }
+
+        function formatConditionName(condition) {
+            const key = (condition || '').toString().toLowerCase();
+            const names = {
+                'diabetes': 'Diabetes',
+                'parkinsons': "Parkinson's",
+                'hypertension': 'Hypertension',
+                'asthma': 'Asthma',
+                'arthritis': 'Arthritis',
+                'heart-disease': 'Heart Disease',
+                'no-conditions': 'No Conditions'
+            };
+            if (names[key]) return names[key];
+            return key.split(/[-_ ]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        }
+
+        function renderPatients(patients) {
+            const tbody = document.getElementById('patient-tbody');
+            if (!tbody) return;
+
+            tbody.innerHTML = '';
+
+            if (!Array.isArray(patients) || patients.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem; color: #6B7280; font-size: 1rem;">No patients found</td></tr>';
+                    return;
+                }
+                
+            patients.forEach(patient => {
+                const conditions = Array.isArray(patient.healthConditions) ? patient.healthConditions : [];
+                conditions.forEach(condition => ensureConditionScore(patient, condition));
+                
+                // Calculate overall risk score
+                const actualConditions = conditions.filter(c => c !== 'no-conditions');
+                let overallScore = null;
+                if (actualConditions.length > 0) {
+                    const scores = actualConditions.map(c => getPatientConditionScore(patient, c));
+                    overallScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+                }
+                
+                const riskClass = overallScore !== null ? getRiskScoreClass(overallScore) : '';
+                const riskColor = overallScore !== null ? getRiskScoreColor(overallScore) : '#000000';
+                
+                const tags = conditions.length
+                    ? conditions.map(condition => `
+                            <span class="health-tag" data-condition="${condition}">
+                                ${formatConditionName(condition)}
+                                <button class="tag-remove" onclick="event.stopPropagation(); removeHealthCondition('${patient.id}', '${condition}')" aria-label="Remove ${formatConditionName(condition)}"><svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                            </span>
+                        `).join('')
+                    : '<span class="no-conditions">No conditions</span>';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${patient.name || 'Unknown'}</strong></td>
+                    <td>${patient.email || 'N/A'}</td>
+                    <td>
+                        <div class="health-tags-container">
+                            ${tags}
+                            <button class="add-tag-btn" onclick="event.stopPropagation(); showAddTagModal('${patient.id}')" title="Add condition" aria-label="Add condition to ${patient.name}">
+                                <span>+</span>
+                            </button>
+                        </div>
+                    </td>
+                    <td>
+                        ${overallScore !== null ? `
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span class="condition-score ${riskClass}" style="color: ${riskColor}; font-size: 1.2rem; font-weight: 700;">
+                                    ${overallScore}
+                                </span>
+                                <span style="color: #6B7280; font-size: 0.9rem;">/100</span>
+                            </div>
+                        ` : '<span style="color: #9CA3AF;">N/A</span>'}
+                    </td>
+                    <td class="actions-col">
+                        <button class="action-btn view-btn" onclick="event.stopPropagation(); showPatientDetail('${patient.id}')" title="View Details" aria-label="View details for ${patient.name}">
+                            ${ICONS.eye}
+                            <span>View Details</span>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function buildConditionStats(patients) {
+            const metrics = {};
+            patients.forEach(patient => {
+                const conditions = Array.isArray(patient.healthConditions) && patient.healthConditions.length
+                    ? patient.healthConditions
+                    : ['no-conditions'];
+                conditions.forEach(condition => {
+                    const key = condition.toLowerCase();
+                    if (!metrics[key]) {
+                        metrics[key] = { count: 0, totalScore: 0 };
+                    }
+                    metrics[key].count += 1;
+                    if (key !== 'no-conditions') {
+                        metrics[key].totalScore += getPatientConditionScore(patient, condition);
+                    }
+                });
+            });
+
+            return Object.entries(metrics).map(([key, value]) => {
+                const average = key !== 'no-conditions' && value.count
+                    ? Math.round(value.totalScore / value.count)
+                    : 0;
+                return {
+                    key,
+                    label: key === 'no-conditions' ? 'No Conditions' : formatConditionName(key),
+                    count: value.count,
+                    avgScore: average
+                };
+            }).sort((a, b) => b.count === a.count ? a.label.localeCompare(b.label) : b.count - a.count);
+        }
+
+        function renderConditionHistogram(patients) {
+            const canvas = document.getElementById('histogramChart');
+            if (!canvas || typeof Chart === 'undefined') return;
+
+            const stats = buildConditionStats(patients);
+            const labels = stats.map(item => item.label);
+            const conditionKeys = stats.map(item => item.key);
+            const counts = stats.map(item => item.count);
+            const averageScores = stats.map(item => item.avgScore || 0);
+            const maxCount = counts.length ? Math.max(...counts) : 0;
+            const palette = ['#000000', '#1F2937', '#374151', '#4B5563', '#6B7280', '#9CA3AF', '#D1D5DB', '#E5E7EB', '#F3F4F6', '#F9FAFB'];
+            const colors = labels.map((_, index) => palette[index % palette.length]);
+
+            if (histogramChart) {
+                histogramChart.destroy();
+            }
+
+            const scoreLabelPlugin = {
+                id: 'barScoreLabels',
+                afterDatasetsDraw(chart) {
+                    const { ctx } = chart;
+                    const datasetMeta = chart.getDatasetMeta(0);
+                    datasetMeta.data.forEach((bar, index) => {
+                        const score = averageScores[index];
+                        if (conditionKeys[index] === 'no-conditions' || typeof score !== 'number') {
+                            return;
+                        }
+                        const position = bar.tooltipPosition();
+                        ctx.save();
+                        ctx.fillStyle = '#4338CA';
+                        ctx.font = '600 14px "Poppins", sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'bottom';
+                        const label = `Average: ${score}`;
+                        ctx.fillText(label, position.x, position.y - 8);
+                        ctx.restore();
+                    });
+                }
+            };
+
+            histogramChart = new Chart(canvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: labels.length ? labels : ['No Data'],
+                    datasets: [{
+                        label: 'Patients',
+                        data: counts.length ? counts : [0],
+                        backgroundColor: colors.length ? colors : ['#CBD5F5']
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: context => {
+                                    const base = `${context.parsed.y || 0} patient${context.parsed.y === 1 ? '' : 's'}`;
+                                    const key = conditionKeys[context.dataIndex];
+                                    if (key === 'no-conditions') {
+                                        return base;
+                                    }
+                                    const score = averageScores[context.dataIndex] || 0;
+                                    return `${base} - Average: ${score}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            suggestedMax: maxCount + 1,
+                            ticks: {
+                                stepSize: 1,
+                                color: '#4B5563',
+                                font: {
+                                    size: 16,
+                                    weight: '600'
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Patient Count',
+                                color: '#1F2937',
+                                font: {
+                                    size: 20,
+                                    weight: '700'
+                                }
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#4B5563',
+                                font: {
+                                    size: 16,
+                                    weight: '600'
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Condition',
+                                color: '#1F2937',
+                                font: { size: 20, weight: '700' }
+                            }
+                        }
+                    },
+                    layout: {
+                        padding: {
+                            top: 32,
+                            bottom: 0,
+                            left: 0,
+                            right: 0
+                        }
+                    }
+                },
+                plugins: [scoreLabelPlugin]
+            });
+        }
+
+        function applyFilters() {
+            const searchInput = document.getElementById('search-input');
+            const healthFilter = document.getElementById('health-filter');
+            const search = searchInput ? searchInput.value.trim().toLowerCase() : '';
+            const selectedCondition = healthFilter ? healthFilter.value : '';
+
+            let filtered = [...mockPatientsData];
+
+            if (search) {
+                filtered = filtered.filter(patient => {
+                    const matchesName = (patient.name || '').toLowerCase().includes(search);
+                    const matchesEmail = (patient.email || '').toLowerCase().includes(search);
+                    const matchesCondition = patient.healthConditions.some(condition => condition.toLowerCase().includes(search));
+                    return matchesName || matchesEmail || matchesCondition;
+                });
+            }
+
+            if (selectedCondition) {
+                filtered = filtered.filter(patient => patient.healthConditions.includes(selectedCondition));
+            }
+
+            renderPatients(filtered);
+            renderConditionHistogram(filtered);
+        }
+
+        function addHealthCondition(patientId, condition) {
+            const patient = mockPatientsData.find(p => p.id === patientId);
+            if (patient && !patient.healthConditions.includes(condition)) {
+                patient.healthConditions.push(condition);
+                ensureConditionScore(patient, condition);
+                applyFilters();
+            }
+        }
+
+        function removeHealthCondition(patientId, condition) {
+            const patient = mockPatientsData.find(p => p.id === patientId);
+            if (patient) {
+                patient.healthConditions = patient.healthConditions.filter(item => item !== condition);
+                if (patient.conditionScores) {
+                    delete patient.conditionScores[(condition || '').toString().toLowerCase()];
+                }
+                applyFilters();
+            }
+        }
+
+        function showAddTagModal(patientId) {
+            const patient = mockPatientsData.find(p => p.id === patientId);
+            if (!patient) {
+                showAlert('Patient not found.', 'error');
+                return;
+            }
+
+            const available = ['diabetes', 'parkinsons', 'hypertension', 'asthma', 'arthritis', 'heart-disease'];
+            const remaining = available.filter(condition => !patient.healthConditions.includes(condition));
+
+            if (!remaining.length) {
+                showAlert('All available conditions have been added.', 'info');
+                return;
+            }
+
+            const selectMarkup = `
+                <select id="new-condition-select" class="condition-select">
+                    <option value="">Select a condition...</option>
+                    ${remaining.map(condition => `<option value="${condition}">${formatConditionName(condition)}</option>`).join('')}
+                </select>
+            `;
+
+            showPopup('Add Health Condition', selectMarkup, 'info', [
+                {
+                    text: 'Add',
+                    onclick: () => {
+                        const select = document.getElementById('new-condition-select');
+                        const value = select ? select.value : '';
+                        if (value) {
+                            addHealthCondition(patientId, value);
+                            closePopup();
+                        }
+                    }
+                },
+                {
+                    text: 'Cancel',
+                    onclick: closePopup
+                }
+            ]);
+        }
+
+        async function showPatientDetail(patientId) {
+            // Always attempt AI first for risk scores and trajectories, with robust fallbacks
+            const patient = mockPatientsData.find(p => p.id === patientId);
+            if (!patient) {
+                showAlert('Patient not found.', 'error');
+                return;
+            }
+
+            const modal = document.getElementById('patient-detail-modal');
+            const container = document.getElementById('patient-detail-content');
+            if (!modal || !container) return;
+
+            const conditions = patient.healthConditions.length ? patient.healthConditions : ['no-conditions'];
+            const uniqueConditions = [...new Set(conditions.map(condition => condition.toLowerCase()))];
+            const actualConditions = uniqueConditions.filter(condition => condition !== 'no-conditions');
+
+            // Prepare metrics for AI
+            const metrics = getPatientMetrics(patient);
+            const metricsByCondition = { common: metrics };
+            actualConditions.forEach(c => { metricsByCondition[c] = metrics; });
+
+            // Try AI risk scoring + trajectories first (using disease-specific wrappers)
+            let aiScores = null;
+            let aiTrajectories = new Map();
+            if (actualConditions.length > 0) {
+                try {
+                    // Disease-specific GPT wrapper routing
+                    const diseaseSpecificRiskFunctions = {
+                        'diabetes': window.generateDiabetesRiskScoresWithGPT,
+                        'hypertension': window.generateHypertensionRiskScoresWithGPT,
+                        'heart-disease': window.generateHeartDiseaseRiskScoresWithGPT,
+                        'asthma': window.generateAsthmaRiskScoresWithGPT,
+                        'arthritis': window.generateArthritisRiskScoresWithGPT,
+                        'parkinsons': window.generateParkinsonsRiskScoresWithGPT
+                    };
+
+                    // Fallback to generic if disease-specific not available
+                    const fallbackFunction = window.generateRiskScoresAndTrajectoriesWithGPT;
+
+                    aiScores = {};
+                    const results = await Promise.allSettled(
+                        actualConditions.map(async (cond) => {
+                            const condLower = cond.toLowerCase();
+                            const specificFn = diseaseSpecificRiskFunctions[condLower];
+                            
+                            if (specificFn && typeof specificFn === 'function') {
+                                // Use disease-specific wrapper
+                                const metricsForCond = metricsByCondition[condLower] || metricsByCondition.common;
+                                return await specificFn(patient, metricsForCond);
+                            } else if (fallbackFunction && typeof fallbackFunction === 'function') {
+                                // Fallback to generic wrapper
+                                return await fallbackFunction([cond], patient, metricsByCondition);
+                            }
+                            return null;
+                        })
+                    );
+
+                    results.forEach((result, idx) => {
+                        if (result.status === 'fulfilled' && result.value) {
+                            const cond = actualConditions[idx].toLowerCase();
+                            let item = null;
+
+                            // Handle disease-specific response format
+                            if (result.value.data && result.value.data.condition) {
+                                item = result.value.data;
+                            } else if (result.value.data && result.value.data.items && result.value.data.items.length) {
+                                item = result.value.data.items.find(i => i.condition === cond) || result.value.data.items[0];
+                            } else if (result.value.error) {
+                                console.warn(`AI scoring error for ${cond}:`, result.value.error);
+                                return;
+                            }
+
+                            if (item) {
+                                const aiScoreRaw = Math.max(0, Math.min(100, Math.round(Number(item.score) || 0)));
+
+                                // Calibration: compute rubric score for same condition + metrics
+                                const metricsForCond = metricsByCondition[cond] || metricsByCondition.common;
+                                const rubricScore = window.NF_RiskModel.computeDiseaseRisk(cond, metricsForCond);
+
+                                // Limit deviation to ±10 points from rubric
+                                const calibrated = Math.round(rubricScore + Math.max(-10, Math.min(10, aiScoreRaw - rubricScore)));
+                                aiScores[cond] = Math.max(0, Math.min(100, calibrated));
+
+                                // Trajectory: anchor week0 to calibrated score and bound weekly deltas to ±5
+                                let traj = Array.isArray(item.trajectory) ? item.trajectory.slice(0, 6) : [];
+                                if (traj.length) {
+                                    traj[0] = aiScores[cond];
+                                    for (let i = 1; i < traj.length; i++) {
+                                        const prev = Math.round(Number(traj[i - 1]) || aiScores[cond]);
+                                        const current = Math.round(Number(traj[i]) || prev);
+                                        const bounded = Math.max(prev - 5, Math.min(prev + 5, current));
+                                        traj[i] = Math.max(0, Math.min(100, bounded));
+                                    }
+                                    aiTrajectories.set(cond, traj);
+                                }
+                            }
+                        } else if (result.status === 'rejected') {
+                            console.warn(`AI scoring failed for ${actualConditions[idx]}:`, result.reason);
+                        }
+                    });
+
+                    // Cache AI scores for this render (calibrated)
+                    if (Object.keys(aiScores).length > 0) {
+                        patient.conditionScores = patient.conditionScores || {};
+                        Object.entries(aiScores).forEach(([k, v]) => { patient.conditionScores[k] = v; });
+                    }
+                } catch (err) {
+                    console.warn('AI scoring unavailable; using deterministic rubric:', err);
+                }
+            }
+
+            // Build hero tags
+            const heroTags = uniqueConditions.length
+                ? uniqueConditions.map(condition => `<span class="hero-tag">${formatConditionName(condition)}</span>`).join('')
+                : '<span class="hero-tag">No Conditions</span>';
+
+            // Build condition metrics using AI scores (fallback to rubric via ensureConditionScore)
+            const conditionMetrics = actualConditions.map((condition, index) => {
+                const score = typeof patient.conditionScores?.[condition] === 'number'
+                    ? patient.conditionScores[condition]
+                    : getPatientConditionScore(patient, condition);
+                const canvasId = `trajectory-${patient.id}-${condition.replace(/[^a-z0-9]/gi, '-')}-${index}`;
+                const riskClass = getRiskScoreClass(score);
+                const riskColor = getRiskScoreColor(score);
+                return {
+                    key: condition,
+                    label: formatConditionName(condition),
+                    score,
+                    canvasId,
+                    riskClass,
+                    riskColor
+                };
+            });
+
+            // Overall risk
+            const overallRiskScore = calculateOverallRiskScore(conditionMetrics);
+            const overallRiskColor = overallRiskScore ? getRiskScoreColor(overallRiskScore) : '#000000';
+const overallRiskClass = overallRiskScore !== null ? getRiskScoreClass(overallRiskScore) : '';
+            // Render detail panel (remove static care-plan; show AI loading)
+            const recommendationsInitialMarkup = '<div class="care-empty-state">Fetching AI recommendations...</div>';
+
+            // Recommendations (initial fallback from care plan; will be replaced by GPT below)
+            const actionsByDisease = new Map();
+            actualConditions.forEach(condition => {
+                const plan = conditionCarePlans[condition];
+                const entries = plan && Array.isArray(plan.actions) && plan.actions.length
+                    ? plan.actions.slice(0, 3)
+                    : [{ title: `General follow-up for ${formatConditionName(condition)}`, note: 'Confirm status, document any changes, and capture patient priorities.', impact: '-3 points' }];
+                const recommendations = entries.map((action, idx) => ({
+                    ...action,
+                    impact: action.impact || `-${2 + idx} points`
+                }));
+                actionsByDisease.set(condition, { label: formatConditionName(condition), recommendations });
+            });
+
+            // Trajectories: prefer AI, fallback to deterministic
+            const trajectoryData = conditionMetrics.map((metric, idx) => {
+                const aiTraj = aiTrajectories.get(metric.key);
+                const trajectory = Array.isArray(aiTraj) && aiTraj.length ? aiTraj : generateTrajectory(metric.score);
+                return {
+                    metric,
+                    trajectory,
+                    canvasId: `traj-detail-trajectory-${patient.id}-${metric.key.replace(/[^a-z0-9]/gi, '-')}-${idx}`,
+                    insights: generateTrajectoryInsights(metric.score, metric.key, trajectory)
+                };
+            });
+
+            destroyConditionCharts();
+            const initials = patient.name.split(' ').map(p => p[0].toUpperCase()).slice(0, 2).join('') || '?';
+
+            container.innerHTML = `
+                <div class="patient-detail-body">
+                    <div class="actions-column">
+                        <div class="detail-card">
+                            <h3>Patient Overview</h3>
+                            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                                <div class="avatar">${initials}</div>
+                                <div>
+                                    <div class="detail-subtitle">${patient.name}</div>
+                                    <div class="detail-subtitle">ID: ${patient.id}</div>
+                                </div>
+                            </div>
+                            <div style="margin: 0.75rem 0 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                <button id="loginEmrBtn" style="border: 2px solid #000; background: #FFF; padding: 0.5rem 0.75rem; cursor: pointer;">Login with EMR</button>
+                                <button id="aiEhrScrapeBtn" style="border: 2px solid #000; background: #FFF; padding: 0.5rem 0.75rem; cursor: pointer;">AI EHR Scrape</button>
+                                <button id="exportCsvBtn" style="border: 2px solid #000; background: #FFF; padding: 0.5rem 0.75rem; cursor: pointer;">Export CSV</button>
+                                <button id="exportPdfBtn" style="border: 2px solid #000; background: #FFF; padding: 0.5rem 0.75rem; cursor: pointer;">Export PDF</button>
+                            </div>
+                            ${overallRiskScore !== null ? `
+                            <div class="overall-risk-score-card ${overallRiskClass}">
+                                <div class="overall-risk-score-label">Overall Risk</div>
+                                <div class="overall-risk-score-value" style="color: #FFFFFF;">${overallRiskScore}</div>
+                                <div style="font-size: 0.85rem; margin-top: 0.5rem; opacity: 0.9;">Average of all disease risk scores</div>
+                            </div>
+                            ` : ''}
+                            ${recommendationsInitialMarkup}
+                        </div>
+                    </div>
+                    <div class="trajectory-column">
+                        <div class="detail-card">
+                            <h3>Disease Trajectory Analysis</h3>
+                            ${trajectoryData.map((data) => {
+                                const { metric, trajectory, canvasId, insights } = data;
+                                const trendLabel = computeTrendLabel(trajectory);
+                                const badgeColor = trendColor(trendLabel);
+                                return `
+                                <div class="trajectory-detail-card">
+                                    <h3>${metric.label} Trajectory
+                                        <span class="risk-trend-badge ${trendLabel}" style="display:inline-block; padding:3px 8px; border:2px solid #000; background:#FFF; text-transform:capitalize; font-size:0.8rem; margin-left:0.5rem; color:${badgeColor};">${trendLabel}</span>
+                                    </h3>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                        <div>
+                                            <div style="font-size: 0.9rem; color: #6B7280; margin-bottom: 0.25rem;">Current Risk Score</div>
+                                            <div class="condition-score ${metric.riskClass}" style="color: ${metric.riskColor};">
+                                                ${metric.score}<span class="condition-score-max">/100</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="trajectory-chart-container">
+                                        <canvas id="${canvasId}" data-trajectory="${JSON.stringify(trajectory)}"></canvas>
+                                    </div>
+                                    ${insights.length > 0 ? `
+                                    <div class="trajectory-insights">
+                                        ${insights.map(insight => `
+                                        <div class="trajectory-insight-item">
+                                            <h5>${insight.type === 'peak' ? '<svg style="display: inline-block; width: 18px; height: 18px; vertical-align: middle; margin-right: 6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Projected Risk Peak' : '<svg style="display: inline-block; width: 18px; height: 18px; vertical-align: middle; margin-right: 6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="9" y1="18" x2="15" y2="18"></line><line x1="10" y1="22" x2="14" y2="22"></line><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8a6 6 0 0 0-6-6 6 6 0 0 0-6 6 4.65 4.65 0 0 0 1.5 3.5c.76.76 1.23 1.52 1.41 2.5"></path><path d="M9.09 14a1 1 0 0 0 .91 1h4a1 1 0 0 0 .91-1"></path></svg> Recommendation'}</h5>
+                                            <p>${insight.description}</p>
+                                            ${insight.fixInstructions ? `
+                                            <div style="margin-top: 0.75rem; padding: 0.75rem; background: #FFFFFF; border: 2px solid #000000;">
+                                                <strong style="display: block; margin-bottom: 0.5rem; color: #000000;">How to Fix:</strong>
+                                                <p style="margin: 0; color: #374151; font-size: 0.9rem; line-height: 1.6;">${insight.fixInstructions}</p>
+                                            </div>
+                                            ` : ''}
+                                        </div>
+                                        `).join('')}
+                                    </div>
+                                    ` : ''}
+                                </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Render charts using AI trajectories where available
+            setTimeout(() => {
+                trajectoryData.forEach((data) => {
+                    createTrajectoryChart(data.canvasId, data.metric.score, data.trajectory);
+                });
+            }, 100);
+
+            const exportCsvBtn = document.getElementById('exportCsvBtn');
+            const exportPdfBtn = document.getElementById('exportPdfBtn');
+            if (exportCsvBtn) {
+                exportCsvBtn.addEventListener('click', () => {
+                    const csv = buildPatientSummaryCSV(patient, trajectoryData, actionsByDisease);
+                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = `patient_${patient.id}_${String(patient.name || '').replace(/\s+/g, '_')}_summary.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    URL.revokeObjectURL(a.href);
+                    a.remove();
+                });
+            }
+            if (exportPdfBtn) {
+                exportPdfBtn.addEventListener('click', () => {
+                    openPrintSummary(patient, trajectoryData, actionsByDisease);
+                });
+            }
+            const connectEhrBtn = document.getElementById('connectEhrBtn');
+            const importEhrBtn = document.getElementById('importEhrBtn');
+            if (connectEhrBtn) {
+                connectEhrBtn.addEventListener('click', () => {
+                    if (window.connectEHRForPatient) {
+                        window.connectEHRForPatient(patient);
+                    }
+                });
+            }
+            if (importEhrBtn) {
+                importEhrBtn.addEventListener('click', () => {
+                    if (window.fetchAndIngestObservations) {
+                        window.fetchAndIngestObservations(patient);
+                    }
+                });
+            }
+            const loginEmrBtn = document.getElementById('loginEmrBtn');
+            if (loginEmrBtn) {
+                loginEmrBtn.addEventListener('click', () => {
+                    if (window.loginWithEMR) {
+                        window.loginWithEMR();
+                    }
+                });
+            }
+            const aiEhrScrapeBtn = document.getElementById('aiEhrScrapeBtn');
+            if (aiEhrScrapeBtn) {
+                aiEhrScrapeBtn.addEventListener('click', () => {
+                    if (typeof aiIngestEhrData === 'function') {
+                        aiIngestEhrData(patient);
+                    }
+                });
+            }
+
+            // Trigger GPT-driven recommendations render (fallback to care plan only if AI fails/empty)
+            (async () => {
+                const scoresByCondition = {};
+                actualConditions.forEach(c => { scoresByCondition[c] = patient.conditionScores[c]; });
+
+                const card = document.querySelector('.actions-column .detail-card');
+                if (!card) return;
+
+                const buildFallbackRecommendationsMarkup = () => {
+                    return actualConditions.map((condition, idx) => {
+                        const plan = conditionCarePlans[condition];
+                        const entries = plan && Array.isArray(plan.actions) && plan.actions.length
+                            ? plan.actions.slice(0, 3)
+                            : [{ title: `General follow-up for ${formatConditionName(condition)}`, note: 'Confirm status, document any changes, and capture patient priorities.', impact: '-3 points' }];
+                        const recs = entries.map((action, i) => ({
+                            title: action.title,
+                            note: action.note,
+                            impact: action.impact || `-${2 + i} points`
+                        }));
+                        const isFirst = idx === 0;
+                        const inner = recs.map(rec => `
+                            <div class="recommendation-item">
+                                <div style="font-weight: 600; margin-bottom: 0.5rem; color: #000000;">${rec.title}</div>
+                                <p style="margin: 0 0 0.5rem 0; color: #374151;">${rec.note}</p>
+                                <span class="recommendation-impact">Impact: ${rec.impact}</span>
+                            </div>
+                        `).join('');
+                        return `
+                            <div class="disease-dropdown">
+                                <div class="disease-dropdown-header ${isFirst ? 'active' : ''}" onclick="toggleDiseaseDropdown(this)">
+                                    <span>${formatConditionName(condition)}</span>
+                                    <svg style="display: inline-block; width: 12px; height: 12px; vertical-align: middle; transition: transform 0.2s ease;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                </div>
+                                <div class="disease-dropdown-content ${isFirst ? 'active' : ''}">
+                                    ${inner}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                };
+
+                let recommendationsMarkup = '';
+                try {
+                    // Disease-specific GPT wrapper routing for recommendations
+                    const diseaseSpecificRecFunctions = {
+                        'diabetes': window.generateDiabetesRecommendationsWithGPT,
+                        'hypertension': window.generateHypertensionRecommendationsWithGPT,
+                        'heart-disease': window.generateHeartDiseaseRecommendationsWithGPT,
+                        'asthma': window.generateAsthmaRecommendationsWithGPT,
+                        'arthritis': window.generateArthritisRecommendationsWithGPT,
+                        'parkinsons': window.generateParkinsonsRecommendationsWithGPT
+                    };
+
+                    // Fallback to generic if disease-specific not available
+                    const fallbackFunction = window.generateConditionRecommendationsWithGPT;
+
+                    // Fetch recommendations for each condition using disease-specific wrappers
+                    const recommendationResults = await Promise.allSettled(
+                        actualConditions.map(async (cond) => {
+                            const condLower = cond.toLowerCase();
+                            const specificFn = diseaseSpecificRecFunctions[condLower];
+                            const metricsForCond = metricsByCondition[condLower] || metricsByCondition.common;
+                            const scoreContext = scoresByCondition?.[condLower] || { score: getPatientConditionScore(patient, condLower) };
+
+                            if (specificFn && typeof specificFn === 'function') {
+                                // Use disease-specific wrapper
+                                return { condition: condLower, result: await specificFn(patient, metricsForCond, scoreContext) };
+                            } else if (fallbackFunction && typeof fallbackFunction === 'function') {
+                                // Fallback to generic wrapper
+                                return { condition: condLower, result: await fallbackFunction([cond], patient, metricsByCondition, scoresByCondition) };
+                            }
+                            return { condition: condLower, result: null };
+                        })
+                    );
+
+                    // Normalize various possible return shapes safely
+                    let arr = [];
+                    recommendationResults.forEach((settled, idx) => {
+                        if (settled.status === 'fulfilled' && settled.value && settled.value.result) {
+                            const cond = settled.value.condition;
+                            const result = settled.value.result;
+
+                            // Handle disease-specific response format
+                            if (result.data && Array.isArray(result.data)) {
+                                // Direct array of recommendations
+                                arr.push({ condition: cond, recommendations: result.data });
+                            } else if (result && Array.isArray(result)) {
+                                arr.push({ condition: cond, recommendations: result });
+                            } else if (result && result.data && Array.isArray(result.data)) {
+                                arr.push({ condition: cond, recommendations: result.data });
+                            } else if (result && result.error) {
+                                console.warn(`Recommendations error for ${cond}:`, result.error);
+                            }
+                        } else if (settled.status === 'rejected') {
+                            console.warn(`Recommendations failed for ${actualConditions[idx]}:`, settled.reason);
+                        }
+                    });
+
+                    if (!arr.length) {
+                        recommendationsMarkup = buildFallbackRecommendationsMarkup();
+                    } else {
+                        const byCondition = new Map();
+                        arr.forEach(entry => {
+                            const cond = (entry.condition || '').toLowerCase();
+                            const recs = Array.isArray(entry.recommendations) ? entry.recommendations : [];
+                            byCondition.set(cond, recs.map(r => ({
+                                title: r.title || r.name || 'Recommendation',
+                                note: r.note || r.description || '',
+                                impact: typeof r.impactPoints === 'number'
+                                    ? `-${r.impactPoints} points`
+                                    : (r.impact || '-3 points')
+                            })));
+                        });
+
+                        recommendationsMarkup = actualConditions.map((condition, idx) => {
+                            const label = formatConditionName(condition);
+                            const recs = byCondition.get(condition) || [];
+                            const isFirst = idx === 0;
+                            const inner = recs.length
+                                ? recs.map(rec => `
+                                    <div class="recommendation-item">
+                                        <div style="font-weight: 600; margin-bottom: 0.5rem; color: #000000;">${rec.title}</div>
+                                        <p style="margin: 0 0 0.5rem 0; color: #374151;">${rec.note}</p>
+                                        <span class="recommendation-impact">Impact: ${rec.impact}</span>
+                                    </div>
+                                `).join('')
+                                : '<div class="care-empty-state">No AI recommendations returned.</div>';
+                            return `
+                                <div class="disease-dropdown">
+                                    <div class="disease-dropdown-header ${isFirst ? 'active' : ''}" onclick="toggleDiseaseDropdown(this)">
+                                        <span>${label}</span>
+                                        <svg style="display: inline-block; width: 12px; height: 12px; vertical-align: middle; transition: transform 0.2s ease;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                    </div>
+                                    <div class="disease-dropdown-content ${isFirst ? 'active' : ''}">
+                                        ${inner}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                    }
+                } catch (e) {
+                    console.warn('AI recommendations error:', e);
+                    recommendationsMarkup = buildFallbackRecommendationsMarkup();
+                }
+
+                // Preserve or recalculate overall risk score
+                let overallRiskSummary = card.querySelector('.overall-risk-score-card')?.outerHTML || '';
+                if (!overallRiskSummary) {
+                    // Recalculate overall risk score if not found in DOM
+                    const conditionMetrics = actualConditions.map((condition, index) => {
+                        const score = typeof patient.conditionScores?.[condition] === 'number'
+                            ? patient.conditionScores[condition]
+                            : getPatientConditionScore(patient, condition);
+                        const riskClass = getRiskScoreClass(score);
+                        return {
+                            key: condition,
+                            label: formatConditionName(condition),
+                            score,
+                            riskClass
+                        };
+                    });
+                    const overallRiskScore = calculateOverallRiskScore(conditionMetrics);
+                    const overallRiskClass = overallRiskScore !== null ? getRiskScoreClass(overallRiskScore) : '';
+                    if (overallRiskScore !== null) {
+                        overallRiskSummary = `
+                            <div class="overall-risk-score-card ${overallRiskClass}">
+                                <div class="overall-risk-score-label">Overall Risk</div>
+                                <div class="overall-risk-score-value" style="color: #FFFFFF;">${overallRiskScore}</div>
+                                <div style="font-size: 0.85rem; margin-top: 0.5rem; opacity: 0.9;">Average of all disease risk scores</div>
+                            </div>
+                        `;
+                    }
+                }
+                card.innerHTML = `
+                    <h3>Patient Overview</h3>
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                        <div class="avatar">${initials}</div>
+                        <div>
+                            <div class="detail-subtitle">${patient.name}</div>
+                            <div class="detail-subtitle">ID: ${patient.id}</div>
+                        </div>
+                    </div>
+                    <div style="margin: 0.75rem 0 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button id="loginEmrBtn" style="border: 2px solid #000; background: #FFF; padding: 0.5rem 0.75rem; cursor: pointer;">Login with EMR</button>
+                        <button id="aiEhrScrapeBtn" style="border: 2px solid #000; background: #FFF; padding: 0.5rem 0.75rem; cursor: pointer;">AI EHR Scrape</button>
+                        <button id="exportCsvBtn" style="border: 2px solid #000; background: #FFF; padding: 0.5rem 0.75rem; cursor: pointer;">Export CSV</button>
+                        <button id="exportPdfBtn" style="border: 2px solid #000; background: #FFF; padding: 0.5rem 0.75rem; cursor: pointer;">Export PDF</button>
+                    </div>
+                    ${overallRiskSummary}
+                    <div class="ai-label" style="font-size: 0.85rem; color: #6B7280; margin-bottom: 0.5rem;">AI Recommendations</div>
+                    ${recommendationsMarkup}
+                `;
+
+                const _csvBtn = document.getElementById('exportCsvBtn');
+                const _pdfBtn = document.getElementById('exportPdfBtn');
+                if (_csvBtn) {
+                    _csvBtn.addEventListener('click', () => {
+                        const csv = buildPatientSummaryCSV(patient, trajectoryData, actionsByDisease);
+                        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                        const a = document.createElement('a');
+                        a.href = URL.createObjectURL(blob);
+                        a.download = `patient_${patient.id}_${String(patient.name || '').replace(/\s+/g, '_')}_summary.csv`;
+                        document.body.appendChild(a);
+                        a.click();
+                        URL.revokeObjectURL(a.href);
+                        a.remove();
+                    });
+                }
+                if (_pdfBtn) {
+                    _pdfBtn.addEventListener('click', () => {
+                        openPrintSummary(patient, trajectoryData, actionsByDisease);
+                    });
+                }
+                const _connectEhrBtn = document.getElementById('connectEhrBtn');
+                const _importEhrBtn = document.getElementById('importEhrBtn');
+                if (_connectEhrBtn) {
+                    _connectEhrBtn.addEventListener('click', () => {
+                        if (window.connectEHRForPatient) {
+                            window.connectEHRForPatient(patient);
+                        }
+                    });
+                }
+                if (_importEhrBtn) {
+                    _importEhrBtn.addEventListener('click', () => {
+                        if (window.fetchAndIngestObservations) {
+                            window.fetchAndIngestObservations(patient);
+                        }
+                    });
+                }
+                const _loginEmrBtn = document.getElementById('loginEmrBtn');
+                if (_loginEmrBtn) {
+                    _loginEmrBtn.addEventListener('click', () => {
+                        if (window.loginWithEMR) {
+                            window.loginWithEMR();
+                        }
+                    });
+                }
+                const _aiEhrScrapeBtn = document.getElementById('aiEhrScrapeBtn');
+                if (_aiEhrScrapeBtn) {
+                    _aiEhrScrapeBtn.addEventListener('click', () => {
+                        if (typeof aiIngestEhrData === 'function') {
+                            aiIngestEhrData(patient);
+                        }
+                    });
+                }
+            })();
+
+            // AI peak advice for trajectories if projected peak exceeds threshold
+            (async () => {
+                const PEAK_THRESHOLD = 70;
+                for (const data of trajectoryData) {
+                    const traj = Array.isArray(data.trajectory) ? data.trajectory : [];
+                    const peakInfo = detectTrajectoryPeak(traj, PEAK_THRESHOLD);
+                    if (!peakInfo || peakInfo.weekIndex <= 0) continue;
+
+                    const advice = { title: 'AI Peak Advice', description: '' };
+                    try {
+                        // Disease-specific GPT wrapper routing for trajectory advice
+                        const diseaseSpecificAdviceFunctions = {
+                            'diabetes': window.generateDiabetesTrajectoryAdviceWithGPT,
+                            'hypertension': window.generateHypertensionTrajectoryAdviceWithGPT,
+                            'heart-disease': window.generateHeartDiseaseTrajectoryAdviceWithGPT,
+                            'asthma': window.generateAsthmaTrajectoryAdviceWithGPT,
+                            'arthritis': window.generateArthritisTrajectoryAdviceWithGPT,
+                            'parkinsons': window.generateParkinsonsTrajectoryAdviceWithGPT
+                        };
+
+                        const cond = data.metric.key.toLowerCase();
+                        const specificFn = diseaseSpecificAdviceFunctions[cond];
+                        const fallbackFunction = window.generateTrajectoryAdviceWithGPT;
+
+                        if (specificFn && typeof specificFn === 'function') {
+                            // Use disease-specific wrapper
+                            const metricsForCond = metricsByCondition[cond] || metricsByCondition.common;
+                            const adviceRes = await specificFn(
+                                data.metric.score,
+                                peakInfo.weekIndex,
+                                peakInfo.value,
+                                metricsForCond
+                            );
+                            advice.description = adviceRes?.data || adviceRes?.text || adviceRes?.description || adviceRes?.message || '';
+                        } else if (fallbackFunction && typeof fallbackFunction === 'function') {
+                            // Fallback to generic wrapper
+                            const adviceRes = await fallbackFunction(
+                                data.metric.key,
+                                data.metric.score,
+                                peakInfo.weekIndex,
+                                peakInfo.value,
+                                metricsByCondition
+                            );
+                            advice.description = adviceRes?.data || adviceRes?.text || adviceRes?.description || adviceRes?.message || '';
+                        }
+                    } catch (e) {
+                        console.warn('AI peak advice unavailable; rendering basic notice:', e);
+                    }
+
+                    renderPeakAdvice(data.metric.key, data.canvasId, peakInfo, advice);
+                }
+            })();
+
+            modal.style.display = 'flex';
+        }
+
+        function toggleDiseaseDropdown(header) {
+            const content = header.nextElementSibling;
+            const isActive = header.classList.contains('active');
+            
+            // Close all dropdowns
+            document.querySelectorAll('.disease-dropdown-header').forEach(h => {
+                h.classList.remove('active');
+                h.nextElementSibling.classList.remove('active');
+            });
+            
+            // Toggle clicked dropdown
+            if (!isActive) {
+                header.classList.add('active');
+                content.classList.add('active');
+            }
+        }
+
+        function closePatientDetail() {
+            const modal = document.getElementById('patient-detail-modal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+            destroyConditionCharts();
+        }
+
+        function handleLogout(event) {
+            event.preventDefault();
+            sessionStorage.removeItem(AUTH_KEY);
+            sessionStorage.removeItem(NAME_KEY);
+            window.location.replace('index.html');
+        }
+
+        function showAlert(message, type = 'info') {
+            const popupOverlay = document.getElementById('popup-overlay');
+            const popupIcon = document.getElementById('popup-icon');
+            const popupTitle = document.getElementById('popup-title');
+            const popupMessage = document.getElementById('popup-message');
+            const popupButtons = document.getElementById('popup-buttons');
+
+            popupIcon.innerHTML = ICONS[type];
+            popupTitle.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+            popupMessage.textContent = message;
+
+            if (type === 'error') {
+                popupButtons.innerHTML = `
+                    <button class="popup-button primary" onclick="closePopup()">OK</button>
+                `;
+            } else {
+                popupButtons.innerHTML = `
+                    <button class="popup-button primary" onclick="closePopup()">OK</button>
+                `;
+            }
+
+            popupOverlay.style.display = 'flex';
+        }
+
+        function closePopup() {
+            const popupOverlay = document.getElementById('popup-overlay');
+            if (popupOverlay) {
+                popupOverlay.style.display = 'none';
+            }
+        }
+
+        function showPopup(title, message, type = 'info', buttons = []) {
+            const popupOverlay = document.getElementById('popup-overlay');
+            const popupIcon = document.getElementById('popup-icon');
+            const popupTitle = document.getElementById('popup-title');
+            const popupMessage = document.getElementById('popup-message');
+            const popupButtons = document.getElementById('popup-buttons');
+
+            popupIcon.innerHTML = ICONS[type] || ICONS.info;
+            popupTitle.textContent = title;
+            popupMessage.innerHTML = typeof message === 'string' ? message : '';
+
+            popupButtons.innerHTML = '';
+            const actions = Array.isArray(buttons) && buttons.length ? buttons : [{ text: 'OK', onclick: closePopup }];
+            actions.forEach((button, index) => {
+                const btn = document.createElement('button');
+                btn.className = `popup-button ${index === 0 ? 'primary' : 'secondary'}`;
+                if (button.type) {
+                    btn.classList.add(button.type);
+                }
+                btn.textContent = button.text || (index === 0 ? 'OK' : 'Cancel');
+                btn.onclick = typeof button.onclick === 'function' ? button.onclick : closePopup;
+                popupButtons.appendChild(btn);
+            });
+
+            popupOverlay.style.display = 'flex';
+        }
+
+        // SMART on FHIR connect and import helpers
+        function connectEHR() {
+            const inputMarkup = `
+                <div style="text-align: left;">
+                    <label for="fhir-iss-input" style="display:block; font-weight:600; margin-bottom:0.5rem; color:#1F2937;">FHIR Base URL (Issuer)</label>
+                    <input id="fhir-iss-input" type="text" placeholder="https://example-ehr.com/fhir" style="width:100%; padding:0.75rem; border:2px solid #000; border-radius:0; font-family: 'Inter', sans-serif;">
+                    <div style="margin-top:0.5rem; color:#6B7280; font-size:0.85rem;">Client ID: ${SMART_CONFIG.clientId}</div>
+                </div>
+            `;
+            showPopup('Connect EHR (SMART on FHIR)', inputMarkup, 'info', [
+                {
+                    text: 'Connect',
+                    onclick: () => {
+                        const input = document.getElementById('fhir-iss-input');
+                        const iss = input ? input.value.trim() : '';
+                        if (!iss) {
+                            showAlert('Please enter a FHIR base URL (issuer).', 'warning');
+                            return;
+                        }
+                        sessionStorage.setItem(NF_FHIR_ISS_KEY, iss);
+                        closePopup();
+                        if (typeof FHIR === 'undefined' || !FHIR.oauth2) {
+                            showAlert('SMART on FHIR library is unavailable.', 'error');
+                            return;
+                        }
+                        FHIR.oauth2.authorize({
+                            clientId: SMART_CONFIG.clientId,
+                            scope: SMART_CONFIG.scope,
+                            redirectUri: SMART_CONFIG.redirectUri,
+                            iss
+                        });
+                    }
+                },
+                { text: 'Cancel', onclick: closePopup }
+            ]);
+        }
+
+        async function tryInitFhirClient() {
+            try {
+                if (typeof FHIR === 'undefined' || !FHIR.oauth2) {
+                    return null;
+                }
+                const client = await FHIR.oauth2.ready();
+                if (client) {
+                    window.nfFhirClient = client;
+                    sessionStorage.setItem(NF_FHIR_CONNECTED_KEY, 'true');
+                    return client;
+                }
+            } catch (e) {
+                // Not connected or no SMART context
+            }
+            return null;
+        }
+
+        async function importEHRForPatient(patientId) {
+            try {
+                if (!window.nfFhirClient) {
+                    showAlert('Please connect to the EHR first.', 'warning');
+                    return;
+                }
+                const client = window.nfFhirClient;
+                const ehrPatientId = await client.getPatientId();
+
+                const codes = [
+                    '85354-9', // BP panel
+                    '8480-6',  // Systolic BP
+                    '8462-4',  // Diastolic BP
+                    '4548-4',  // HbA1c
+                    '2339-0',  // Glucose mg/dL
+                    '59408-5', // SpO2
+                    '8867-4'   // Heart rate
+                ];
+
+                const response = await client.request(
+                    `Observation?patient=${encodeURIComponent(ehrPatientId)}&code=${codes.join(',')}&_count=200`,
+                    { flat: true }
+                );
+
+                const observations = Array.isArray(response)
+                    ? response
+                    : ((response.entry || []).map(e => e.resource).filter(Boolean));
+
+                const latestByCode = {};
+                observations.forEach(obs => {
+                    const obsDate = new Date(obs.effectiveDateTime || obs.issued || obs.meta?.lastUpdated || 0).getTime();
+
+                    // Direct code values
+                    const obsCodes = (obs.code?.coding || []).map(c => c.code).filter(Boolean);
+                    let value = undefined;
+                    if (obs.valueQuantity && typeof obs.valueQuantity.value === 'number') {
+                        value = obs.valueQuantity.value;
+                    } else if (typeof obs.valueInteger === 'number') {
+                        value = obs.valueInteger;
+                    } else if (typeof obs.valueDecimal === 'number') {
+                        value = obs.valueDecimal;
+                    }
+                    if (value !== undefined) {
+                        obsCodes.forEach(code => {
+                            const prev = latestByCode[code]?.date || 0;
+                            if (obsDate >= prev) {
+                                latestByCode[code] = { value, unit: obs.valueQuantity?.unit, date: obsDate };
+                            }
+                        });
+                    }
+
+                    // Component values (e.g., BP panel)
+                    (obs.component || []).forEach(comp => {
+                        const compCodes = (comp.code?.coding || []).map(c => c.code).filter(Boolean);
+                        const compVal = comp.valueQuantity?.value;
+                        if (typeof compVal === 'number') {
+                            compCodes.forEach(code => {
+                                const prev = latestByCode[code]?.date || 0;
+                                if (obsDate >= prev) {
+                                    latestByCode[code] = { value: compVal, unit: comp.valueQuantity?.unit, date: obsDate };
+                                }
+                            });
+                        }
+                    });
+                });
+
+                const patient = mockPatientsData.find(p => p.id === patientId);
+                if (!patient) {
+                    showAlert('Local patient not found.', 'error');
+                    return;
+                }
+                patient.metrics = patient.metrics || {};
+
+                const systolic = latestByCode['8480-6']?.value;
+                const diastolic = latestByCode['8462-4']?.value;
+                const hba1c = latestByCode['4548-4']?.value;
+                const glucose = latestByCode['2339-0']?.value;
+                const spo2 = latestByCode['59408-5']?.value;
+                const hr = latestByCode['8867-4']?.value;
+
+                if (typeof systolic === 'number') patient.metrics.bpSystolic = systolic;
+                if (typeof diastolic === 'number') patient.metrics.bpDiastolic = diastolic;
+                if (typeof hba1c === 'number') patient.metrics.hba1c = hba1c;
+                if (typeof glucose === 'number') patient.metrics.avgGlucoseMgDl = Math.round(glucose);
+                if (typeof spo2 === 'number') patient.metrics.spo2 = Math.round(spo2);
+                if (typeof hr === 'number') patient.metrics.restingHR = Math.round(hr);
+
+                initializePatientMetrics([patient]);
+                applyFilters();
+                showAlert('EHR data imported and risk metrics updated.', 'success');
+
+                const modal = document.getElementById('patient-detail-modal');
+                if (modal && modal.style.display === 'flex') {
+                    await showPatientDetail(patientId);
+                }
+            } catch (err) {
+                console.error('EHR import error:', err);
+                showAlert('Failed to import EHR data. Ensure connection and patient context.', 'error');
+            }
+        }
+        
+        // AI EHR agent: scrape EMR data and integrate into model metrics
+        const LOINC_TO_METRIC = {
+            '8480-6': { key: 'bpSystolic', unit: 'mmHg' },
+            '8462-4': { key: 'bpDiastolic', unit: 'mmHg' },
+            '4548-4': { key: 'hba1c', unit: '%' },
+            '2339-0': { key: 'avgGlucoseMgDl', unit: 'mg/dL' },
+            '59408-5': { key: 'spo2', unit: '%' },
+            '8867-4': { key: 'restingHR', unit: 'bpm' },
+            '13457-7': { key: 'ldl', unit: 'mg/dL' },
+            '2085-9': { key: 'hdl', unit: 'mg/dL' },
+            '2571-8': { key: 'triglycerides', unit: 'mg/dL' }
+        };
+        function clampClinicalRanges(metrics) {
+            metrics.stepsDaily = Math.max(0, Math.min(30000, Number(metrics.stepsDaily) || 0));
+            metrics.sleepEfficiency = Math.max(50, Math.min(100, Number(metrics.sleepEfficiency) || 0));
+            metrics.sleepDurationHours = Math.max(3, Math.min(14, Number(metrics.sleepDurationHours) || 0));
+            metrics.restingHR = Math.max(40, Math.min(120, Number(metrics.restingHR) || 0));
+            metrics.vo2max = Math.max(10, Math.min(80, Number(metrics.vo2max) || 0));
+            metrics.bpSystolic = Math.max(80, Math.min(220, Number(metrics.bpSystolic) || 0));
+            metrics.bpDiastolic = Math.max(40, Math.min(130, Number(metrics.bpDiastolic) || 0));
+            metrics.sodiumIntakeMg = Math.max(500, Math.min(7000, Number(metrics.sodiumIntakeMg) || 0));
+            metrics.alcoholUnitsWeekly = Math.max(0, Math.min(60, Number(metrics.alcoholUnitsWeekly) || 0));
+            metrics.ldl = Math.max(40, Math.min(300, Number(metrics.ldl) || 0));
+            metrics.hdl = Math.max(20, Math.min(120, Number(metrics.hdl) || 0));
+            metrics.triglycerides = Math.max(40, Math.min(1000, Number(metrics.triglycerides) || 0));
+            metrics.hba1c = Math.max(3.5, Math.min(15, Number(metrics.hba1c) || 0));
+            metrics.avgGlucoseMgDl = Math.max(60, Math.min(400, Number(metrics.avgGlucoseMgDl) || 0));
+            metrics.spo2 = Math.max(70, Math.min(100, Number(metrics.spo2) || 0));
+            metrics.respRate = Math.max(6, Math.min(40, Number(metrics.respRate) || 0));
+            metrics.jointPainScore = Math.max(0, Math.min(10, Number(metrics.jointPainScore) || 0));
+            metrics.gaitStabilityScore = Math.max(0, Math.min(100, Number(metrics.gaitStabilityScore) || 0));
+            metrics.tremorEpisodesWeekly = Math.max(0, Math.min(200, Number(metrics.tremorEpisodesWeekly) || 0));
+            return metrics;
+        }
+        function parseSmokingStatus(observation) {
+            const valCC = observation?.valueCodeableConcept?.coding?.[0] || {};
+            const disp = (valCC.display || '').toLowerCase();
+            return /current/.test(disp) || /smoker/.test(disp);
+        }
+        function inferConditionsFromEhr(conditionResource) {
+            const text = (conditionResource?.code?.text || '').toLowerCase();
+            const disp = (conditionResource?.code?.coding?.[0]?.display || '').toLowerCase();
+            const hay = `${text} ${disp}`;
+            const result = [];
+            if (/(diabetes|type 2|type ii|t2d)/.test(hay)) result.push('diabetes');
+            if (/(hypertension|high blood pressure)/.test(hay)) result.push('hypertension');
+            if (/(asthma)/.test(hay)) result.push('asthma');
+            if (/(arthritis|osteoarthritis|rheumatoid)/.test(hay)) result.push('arthritis');
+            if (/(parkinson|parkinson’s)/.test(hay)) result.push('parkinsons');
+            if (/(heart failure|coronary|ischemic|myocardial|cad|cardiomyopathy)/.test(hay)) result.push('heart-disease');
+            return result;
+        }
+        async function aiIngestEhrData(patient) {
+            if (!(window.fhirClient && window.FHIR && window.FHIR.oauth2)) {
+                showAlert('Not connected to EMR. Click “Login with EMR” first.', 'error');
+                return;
+            }
+            const client = window.fhirClient;
+            const pid = client?.patient?.id;
+            if (!pid) {
+                showAlert('No EMR patient context. Launch from EMR or login with issuer.', 'error');
+                return;
+            }
+            try {
+                const codes = Object.keys(LOINC_TO_METRIC).join(',');
+                const obs = await client.request(`Observation?patient=${encodeURIComponent(pid)}&code=${codes}&_count=200`, { flat: true });
+                const smokingObs = await client.request(`Observation?patient=${encodeURIComponent(pid)}&code=72166-2&_count=50`, { flat: true }).catch(() => []);
+                const conditions = await client.request(`Condition?patient=${encodeURIComponent(pid)}&_count=200`, { flat: true }).catch(() => []);
+                const meds = await client.request(`MedicationRequest?patient=${encodeURIComponent(pid)}&status=active&_count=200`, { flat: true }).catch(() => []);
+        
+                const metrics = { ...(patient.metrics || {}) };
+                const byCode = {};
+                (obs || []).forEach(o => {
+                    const code = o?.code?.coding?.[0]?.code;
+                    const t = new Date(o.effectiveDateTime || o.issued || 0).getTime();
+                    if (!byCode[code] || t > byCode[code].t) {
+                        byCode[code] = { t, val: o.valueQuantity?.value, unit: o.valueQuantity?.unit || o.valueQuantity?.code || '' };
+                    }
+                });
+                Object.entries(byCode).forEach(([code, latest]) => {
+                    const map = LOINC_TO_METRIC[code];
+                    if (!map) return;
+                    const v = latest.val;
+                    if (typeof v !== 'number') return;
+                    metrics[map.key] = map.key === 'hba1c' ? Number(v.toFixed(2)) : Math.round(v);
+                });
+                const isSmoker = Array.isArray(smokingObs) && smokingObs.some(parseSmokingStatus);
+                if (typeof isSmoker === 'boolean') {
+                    metrics.smoker = isSmoker;
+                }
+        
+                const inferred = new Set(patient.healthConditions || []);
+                (conditions || []).forEach(c => inferConditionsFromEhr(c).forEach(x => inferred.add(x)));
+                patient.healthConditions = Array.from(inferred);
+        
+                const medText = (meds || []).map(m => (m.medicationCodeableConcept?.text || m.medicationCodeableConcept?.coding?.[0]?.display || '').toLowerCase());
+                metrics.onStatin = medText.some(s => /statin|atorvastatin|rosuvastatin|simvastatin|pravastatin|lovastatin/.test(s));
+                metrics.onAntihypertensive = medText.some(s => /(ace inhibitor|arb|beta blocker|calcium channel|thiazide|amlodipine|lisinopril|losartan|metoprolol|hydrochlorothiazide)/.test(s));
+        
+                patient.metrics = clampClinicalRanges(metrics);
+        
+                const observations = (obs || []).map(o => {
+                    const coding = o.code?.coding?.[0] || {};
+                    return {
+                        code: coding.code,
+                        display: coding.display || o.code?.text || '',
+                        value: o.valueQuantity?.value,
+                        unit: o.valueQuantity?.unit || o.valueQuantity?.code || '',
+                        effective: o.effectiveDateTime || o.issued || ''
+                    };
+                }).filter(x => typeof x.value === 'number');
+                window.patientEhrProvenance = window.patientEhrProvenance || {};
+                window.patientEhrProvenance[patient.id] = {
+                    issuer: window.ehrIssuer || 'Unknown',
+                    lastImported: new Date().toISOString(),
+                    observations
+                };
+        
+                applyFilters();
+                showPatientDetail(patient.id);
+                showAlert('AI EHR scrape completed. Risk scores updated.', 'success');
+            } catch (e) {
+                console.error('AI EHR scrape failed:', e);
+                showAlert('Failed to scrape EMR data. Check EMR login and issuer.', 'error');
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // OpenAI API key should be set via environment variable or user input
+            // For production, use: sessionStorage.setItem('OPENAI_API_KEY', 'your-api-key-here');
+            // Or set via environment variable if using a backend proxy
+
+            ensureAuthenticated();
+            setWelcomeName();
+            renderNavBar();
+            tryInitFhirClient();
+            applyFilters();
+
+            document.getElementById('search-input').addEventListener('input', applyFilters);
+            document.getElementById('health-filter').addEventListener('change', applyFilters);
+
+            const detailModal = document.getElementById('patient-detail-modal');
+            if (detailModal) {
+                detailModal.addEventListener('click', (event) => {
+                    if (event.target === detailModal) {
+                        closePatientDetail();
+                    }
+                });
+            }
+
+            const popupOverlay = document.getElementById('popup-overlay');
+            if (popupOverlay) {
+                popupOverlay.addEventListener('click', (event) => {
+                    if (event.target === popupOverlay) {
+                        closePopup();
+                    }
+                });
+            }
+        });
+
+        // SMART on FHIR config and helpers
+        (function smartOnFhirAuth() {
+            window.FHIR_CONFIG = window.FHIR_CONFIG || {
+                clientId: 'YOUR_CLIENT_ID',
+                scope: 'launch/patient patient/*.read openid profile',
+                redirectUri: window.location.origin + '/clinical-dashboard.html'
+            };
+
+            window.fhirClient = window.fhirClient || null;
+            window.ehrIssuer = window.ehrIssuer || null;
+
+            window.initSmartOnFhir = async function initSmartOnFhir() {
+                if (!(window.FHIR && window.FHIR.oauth2)) return;
+                try {
+                    const client = await window.FHIR.oauth2.ready();
+                    if (client) {
+                        window.fhirClient = client;
+                        window.ehrIssuer = (client.state && client.state.serverUrl) || null;
+                        console.log('SMART client ready', { patientId: client.patient?.id, issuer: window.ehrIssuer });
+                    }
+                } catch (e) {
+                    console.debug('SMART context not present:', e?.message || e);
+                }
+            };
+
+            window.loginWithEMR = async function loginWithEMR() {
+                if (!(window.FHIR && window.FHIR.oauth2)) {
+                    alert('FHIR client not loaded.');
+                    return;
+                }
+                const iss = prompt('Enter EMR FHIR base URL (issuer):');
+                if (!iss) return;
+                window.ehrIssuer = iss;
+                await window.FHIR.oauth2.authorize({
+                    clientId: window.FHIR_CONFIG.clientId,
+                    scope: window.FHIR_CONFIG.scope,
+                    redirectUri: window.FHIR_CONFIG.redirectUri,
+                    iss
+                });
+            };
+
+            // Preserve existing helpers if already defined
+            window.connectEHRForPatient = window.connectEHRForPatient || async function connectEHRForPatient(patient) {
+                if (!(window.FHIR && window.FHIR.oauth2)) {
+                    alert('FHIR client not loaded.');
+                    return;
+                }
+                const iss = prompt('Enter EHR FHIR base URL (issuer):');
+                if (!iss) return;
+                await window.FHIR.oauth2.authorize({
+                    clientId: window.FHIR_CONFIG.clientId,
+                    scope: window.FHIR_CONFIG.scope,
+                    redirectUri: window.FHIR_CONFIG.redirectUri,
+                    iss
+                });
+            };
+
+            window.fetchAndIngestObservations = window.fetchAndIngestObservations || async function fetchAndIngestObservations(patient) {
+                const client = window.fhirClient;
+                if (!client) {
+                    alert('Not connected to EHR. Click Connect EHR first.');
+                    return;
+                }
+                const patientId = client.patient?.id;
+                if (!patientId) {
+                    alert('No patient context from EHR.');
+                    return;
+                }
+                try {
+                    const codes = [
+                        '8480-6', // Systolic BP
+                        '8462-4', // Diastolic BP
+                        '4548-4', // HbA1c
+                        '2339-0', // Glucose
+                        '59408-5', // SpO2
+                        '8867-4'  // Heart rate
+                    ].join(',');
+                    const obsBundle = await client.request(`Observation?patient=${encodeURIComponent(patientId)}&code=${codes}`, { flat: true });
+                    const metrics = patient.metrics || {};
+                    (obsBundle || []).forEach(o => {
+                        const code = o.code?.coding?.[0]?.code;
+                        const val = o.valueQuantity?.value;
+                        if (typeof val !== 'number') return;
+                        switch (code) {
+                            case '8480-6': metrics.bpSystolic = Math.round(val); break;
+                            case '8462-4': metrics.bpDiastolic = Math.round(val); break;
+                            case '4548-4': metrics.hba1c = Number(val.toFixed(2)); break;
+                            case '2339-0': metrics.avgGlucoseMgDl = Math.round(val); break;
+                            case '59408-5': metrics.spo2 = Math.round(val); break;
+                            case '8867-4': metrics.restingHR = Math.round(val); break;
+                            default: break;
+                        }
+                    });
+                    patient.metrics = metrics;
+                    showPatientDetail(patient.id);
+                    showAlert('EHR data ingested. Scores updated.', 'success');
+                } catch (e) {
+                    console.error('Failed to fetch Observations:', e);
+                    showAlert('Failed to fetch EHR data.', 'error');
+                }
+            };
+
+            document.addEventListener('DOMContentLoaded', window.initSmartOnFhir);
+        })();
+    </script>
+</body>
+</html>
