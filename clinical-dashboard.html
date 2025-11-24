@@ -1192,7 +1192,34 @@
             });
             return [header, ...rows].join('\n');
         }
-        function openPrintSummary(patient, trajectoryData, actionsByDisease) {
+        async function openPrintSummary(patient, trajectoryData, actionsByDisease) {
+            // Fetch FlowBase data for comprehensive summary
+            let flowbaseData = null;
+            let flowbaseStats = { totalRecords: 0, dataTypes: {} };
+            try {
+                const response = await fetch(`/api/flowbase/patient/${patient.id}`);
+                if (response.ok) {
+                    flowbaseData = await response.json();
+                    flowbaseStats.totalRecords = flowbaseData.metadata?.totalRecords || 0;
+                    flowbaseStats.dataTypes = {
+                        notes: flowbaseData.clinicianNotes?.length || 0,
+                        wearables: flowbaseData.wearableData?.length || 0,
+                        emr: flowbaseData.emrData?.length || 0,
+                        ehr: flowbaseData.ehrData?.length || 0,
+                        medications: flowbaseData.medications?.length || 0,
+                        labs: flowbaseData.labResults?.length || 0,
+                        vitals: flowbaseData.vitalSigns?.length || 0,
+                        activities: flowbaseData.activities?.length || 0,
+                        sleep: flowbaseData.sleepData?.length || 0,
+                        nutrition: flowbaseData.nutritionData?.length || 0,
+                        symptoms: flowbaseData.symptoms?.length || 0,
+                        appointments: flowbaseData.appointments?.length || 0
+                    };
+                }
+            } catch (error) {
+                console.warn('Could not fetch FlowBase data for PDF:', error);
+            }
+
             const html = `
             <html>
             <head><title>Patient Summary - ${patient.name}</title></head>
@@ -1200,6 +1227,25 @@
                 <h1 style="margin-top:0;">Patient Summary</h1>
                 <div><strong>ID:</strong> ${patient.id}</div>
                 <div><strong>Name:</strong> ${patient.name}</div>
+                ${flowbaseStats.totalRecords > 0 ? `
+                <div style="margin-top: 8px; padding: 8px; background: #f0f0f0; border: 1px solid #ccc;">
+                    <strong>FlowBase Data Summary:</strong> ${flowbaseStats.totalRecords} total records
+                    <div style="margin-top: 4px; font-size: 0.9em;">
+                        Notes: ${flowbaseStats.dataTypes.notes} | 
+                        Wearables: ${flowbaseStats.dataTypes.wearables} | 
+                        EMR: ${flowbaseStats.dataTypes.emr} | 
+                        EHR: ${flowbaseStats.dataTypes.ehr} | 
+                        Medications: ${flowbaseStats.dataTypes.medications} | 
+                        Labs: ${flowbaseStats.dataTypes.labs} | 
+                        Vitals: ${flowbaseStats.dataTypes.vitals} | 
+                        Activities: ${flowbaseStats.dataTypes.activities} | 
+                        Sleep: ${flowbaseStats.dataTypes.sleep} | 
+                        Nutrition: ${flowbaseStats.dataTypes.nutrition} | 
+                        Symptoms: ${flowbaseStats.dataTypes.symptoms} | 
+                        Appointments: ${flowbaseStats.dataTypes.appointments}
+                    </div>
+                </div>
+                ` : ''}
                 <hr style="margin: 16px 0; border: 0; border-top: 2px solid #000;">
                 ${trajectoryData.map(d => {
                     const traj = Array.isArray(d.trajectory) ? d.trajectory.slice(0, 6) : [];
@@ -1228,6 +1274,67 @@
                     ` : ''}
                     `;
                 }).join('')}
+                ${flowbaseData && flowbaseData.clinicianNotes && flowbaseData.clinicianNotes.length > 0 ? `
+                <hr style="margin: 24px 0; border: 0; border-top: 2px solid #000;">
+                <h2 style="margin: 16px 0 8px;">Recent Clinician Notes (Last 5)</h2>
+                ${flowbaseData.clinicianNotes.slice(-5).reverse().map(note => `
+                    <div style="margin-bottom: 12px; padding: 8px; background: #f9f9f9; border-left: 3px solid #000;">
+                        <div style="font-weight: bold;">${new Date(note.timestamp).toLocaleDateString()} - ${note.clinician}</div>
+                        <div style="margin-top: 4px;">${note.content}</div>
+                        <div style="margin-top: 4px; font-size: 0.85em; color: #666;">Category: ${note.category} | Priority: ${note.priority}</div>
+                    </div>
+                `).join('')}
+                ` : ''}
+                ${flowbaseData && flowbaseData.medications && flowbaseData.medications.length > 0 ? `
+                <hr style="margin: 24px 0; border: 0; border-top: 2px solid #000;">
+                <h2 style="margin: 16px 0 8px;">Current Medications</h2>
+                <table cellspacing="0" cellpadding="6" style="margin-top:8px; border-collapse: collapse; border: 2px solid #000; width: 100%;">
+                    <thead>
+                        <tr>
+                            <th style="border: 2px solid #000;">Medication</th>
+                            <th style="border: 2px solid #000;">Dosage</th>
+                            <th style="border: 2px solid #000;">Frequency</th>
+                            <th style="border: 2px solid #000;">Prescriber</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${flowbaseData.medications.map(med => `
+                            <tr>
+                                <td style="border: 2px solid #000;">${med.name}</td>
+                                <td style="border: 2px solid #000;">${med.dosage}</td>
+                                <td style="border: 2px solid #000;">${med.frequency}</td>
+                                <td style="border: 2px solid #000;">${med.prescriber || 'N/A'}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                ` : ''}
+                ${flowbaseData && flowbaseData.labResults && flowbaseData.labResults.length > 0 ? `
+                <hr style="margin: 24px 0; border: 0; border-top: 2px solid #000;">
+                <h2 style="margin: 16px 0 8px;">Recent Lab Results (Last 10)</h2>
+                <table cellspacing="0" cellpadding="6" style="margin-top:8px; border-collapse: collapse; border: 2px solid #000; width: 100%;">
+                    <thead>
+                        <tr>
+                            <th style="border: 2px solid #000;">Test</th>
+                            <th style="border: 2px solid #000;">Value</th>
+                            <th style="border: 2px solid #000;">Unit</th>
+                            <th style="border: 2px solid #000;">Date</th>
+                            <th style="border: 2px solid #000;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${flowbaseData.labResults.slice(-10).reverse().map(lab => `
+                            <tr>
+                                <td style="border: 2px solid #000;">${lab.testName}</td>
+                                <td style="border: 2px solid #000;">${lab.value}</td>
+                                <td style="border: 2px solid #000;">${lab.unit}</td>
+                                <td style="border: 2px solid #000;">${new Date(lab.date).toLocaleDateString()}</td>
+                                <td style="border: 2px solid #000;">${lab.status || 'N/A'}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                ` : ''}
             </body>
             </html>`;
             const w = window.open('', '_blank');

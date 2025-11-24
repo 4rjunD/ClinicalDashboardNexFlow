@@ -16,7 +16,8 @@ const flowbase = new FlowBase('./data');
 const flowbaseAgent = new FlowBaseAgent(process.env.OPENAI_API_KEY);
 
 // Seed data on first run (only if data directory is empty)
-const patientIds = ['P001', 'P002', 'P003', 'P004', 'P005'];
+// Use actual patient IDs from dashboard: '1', '2', '3', '4', '5', '6'
+const patientIds = ['1', '2', '3', '4', '5', '6'];
 if (flowbase.getAllPatientIds().length === 0) {
   console.log('Initializing FlowBase with seed data...');
   generateSeedData(flowbase, patientIds);
@@ -103,14 +104,33 @@ app.get('/api/flowbase/patient/:patientId/export/csv', async (req, res) => {
     const { patientId } = req.params;
     const patientData = flowbase.getAllPatientData(patientId);
     
+    // Check if patient has data
+    const totalRecords = patientData.metadata?.totalRecords || 0;
+    if (totalRecords === 0) {
+      console.warn(`No FlowBase data found for patient ${patientId}`);
+      // Return empty CSV with headers
+      const emptyCsv = 'Date/Time,Data Source,Data Type,Value,Unit,Category,Notes,Provider/Device\n';
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="patient-${patientId}-flowbase-export-${new Date().toISOString().split('T')[0]}.csv"`);
+      return res.send(emptyCsv);
+    }
+    
+    console.log(`Exporting CSV for patient ${patientId} with ${totalRecords} records`);
+    
     // Use AI agent to format data
     const csvContent = await flowbaseAgent.formatDataForCSV(patientData);
+    
+    // Verify CSV has content
+    if (!csvContent || csvContent.trim().length === 0) {
+      throw new Error('CSV content is empty');
+    }
     
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename="patient-${patientId}-flowbase-export-${new Date().toISOString().split('T')[0]}.csv"`);
     res.send(csvContent);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(`CSV export error for patient ${req.params.patientId}:`, error);
+    res.status(500).json({ error: error.message, details: error.stack });
   }
 });
 

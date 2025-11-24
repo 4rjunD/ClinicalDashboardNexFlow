@@ -120,18 +120,37 @@ Format all this data into a comprehensive CSV with proper headers.`;
     // Header
     rows.push('Date/Time,Data Source,Data Type,Value,Unit,Category,Notes,Provider/Device');
     
+    // Helper function to escape CSV values
+    const escapeCSV = (val) => {
+      if (val === null || val === undefined) return '';
+      const str = String(val);
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+    
     // Helper function to add rows
     const addRows = (items, source, category) => {
       if (!items || !Array.isArray(items)) return;
       items.forEach(item => {
         const date = item.timestamp || item.date || '';
-        const dataType = item.dataType || item.type || category;
-        const value = item.value !== undefined ? item.value : (item.content || '');
+        const dataType = item.dataType || item.type || item.testName || item.name || category;
+        let value = '';
+        if (item.value !== undefined && item.value !== null) {
+          value = item.value;
+        } else if (item.content) {
+          value = item.content;
+        } else if (item.description) {
+          value = item.description;
+        } else if (item.dosage) {
+          value = `${item.name || ''} ${item.dosage}`.trim();
+        }
         const unit = item.unit || '';
-        const notes = item.content || item.notes || item.description || '';
-        const provider = item.provider || item.clinician || item.deviceType || item.deviceId || '';
+        const notes = item.content || item.notes || item.description || item.frequency || item.reason || '';
+        const provider = item.provider || item.clinician || item.deviceType || item.deviceId || item.prescriber || item.lab || '';
         
-        rows.push(`"${date}","${source}","${dataType}","${value}","${unit}","${category}","${notes}","${provider}"`);
+        rows.push(`${escapeCSV(date)},${escapeCSV(source)},${escapeCSV(dataType)},${escapeCSV(value)},${escapeCSV(unit)},${escapeCSV(category)},${escapeCSV(notes)},${escapeCSV(provider)}`);
       });
     };
     
@@ -148,6 +167,12 @@ Format all this data into a comprehensive CSV with proper headers.`;
     addRows(patientData.nutritionData, 'Nutrition', 'Nutrition');
     addRows(patientData.symptoms, 'Symptom', 'Symptom');
     addRows(patientData.appointments, 'Appointment', 'Appointment');
+    
+    if (rows.length === 1) {
+      // Only header, no data
+      console.warn('No data rows found in patientData');
+      return rows.join('\n');
+    }
     
     return rows.join('\n');
   }
