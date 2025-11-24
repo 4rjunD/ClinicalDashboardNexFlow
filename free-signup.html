@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-DX2DMYF5GM"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-DX2DMYF5GM');
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexFlow - Free Plan Sign Up</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #8B5CF6;
+            --gradient: linear-gradient(135deg, #8B5CF6, #6366F1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: var(--gradient);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .signup-container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        .logo {
+            margin-bottom: 2rem;
+        }
+
+        .logo h1 {
+            color: var(--primary-color);
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .logo p {
+            color: #6B7280;
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+        }
+
+        .plan-info {
+            background: #F3F4F6;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            text-align: left;
+        }
+
+        .plan-info h3 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .plan-info ul {
+            list-style: none;
+            color: #4B5563;
+        }
+
+        .plan-info li {
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .plan-info li::before {
+            content: '✓';
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #4B5563;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #E5E7EB;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+
+        .signup-button {
+            background: var(--gradient);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .signup-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .login-link {
+            display: block;
+            color: #6B7280;
+            text-decoration: none;
+            margin-top: 1rem;
+            font-size: 0.96rem;
+        }
+
+        .login-link a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+
+        .error-message {
+            color: #EF4444;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        /* Popup Modal Styles */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            backdrop-filter: blur(5px);
+        }
+
+        .popup-modal {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            animation: popupSlideIn 0.3s ease-out;
+        }
+
+        @keyframes popupSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .popup-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1F2937;
+            margin-bottom: 1rem;
+        }
+
+        .popup-message {
+            color: #6B7280;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .popup-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .popup-button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 100px;
+        }
+
+        .popup-button.primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .popup-button.primary:hover {
+            background: #7C3AED;
+            transform: translateY(-1px);
+        }
+
+        .popup-button.secondary {
+            background: #E5E7EB;
+            color: #4B5563;
+        }
+
+        .popup-button.secondary:hover {
+            background: #D1D5DB;
+        }
+
+        .popup-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+        .popup-icon svg {
+            width: 2.6rem;
+            height: 2.6rem;
+        }
+        .popup-icon--success svg { color: #10B981; }
+        .popup-icon--error svg { color: #EF4444; }
+        .popup-icon--warning svg { color: #F59E0B; }
+        .popup-icon--info svg { color: #3B82F6; }
+
+        .upgrade-link {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #E5E7EB;
+        }
+
+        .upgrade-link p {
+            color: #6B7280;
+            margin-bottom: 1rem;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .pricing-card {
+            background: white;
+            border: 2px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: left;
+            transition: all 0.3s ease;
+        }
+
+        .pricing-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .pricing-card h4 {
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .pricing-card .price {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1F2937;
+            margin-bottom: 1rem;
+        }
+
+        .pricing-card ul {
+            list-style: none;
+            margin-bottom: 1.5rem;
+        }
+
+        .pricing-card li {
+            margin-bottom: 0.5rem;
+            color: #4B5563;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .pricing-card li::before {
+            content: '✓';
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .upgrade-button {
+            background: var(--gradient);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .upgrade-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .upgrade-button.secondary {
+            background: #E5E7EB;
+            color: #4B5563;
+        }
+
+        .upgrade-button.secondary:hover {
+            background: #D1D5DB;
+        }
+
+        .terms {
+            margin: 1.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #4B5563;
+            font-size: 0.9rem;
+        }
+
+        .terms a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .terms a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+            .signup-container {
+                padding: 2rem;
+            }
+
+            .logo h1 {
+                font-size: 2rem;
+            }
+        }
+        .role-btn {
+            font-size: 1.3rem;
+            padding: 1.2rem 2.5rem;
+            border-radius: 16px;
+            border: none;
+            margin: 0;
+            background: var(--gradient);
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 16px rgba(139,92,246,0.10);
+            cursor: pointer;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s, transform 0.6s, box-shadow 0.3s, scale 0.3s;
+            display: inline-block;
+        }
+        .role-btn.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .role-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 8px 24px rgba(139,92,246,0.18);
+        }
+        #role-options {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        #role-selection-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 350px;
+        }
+        #signup-form-container {
+            animation: fadeIn 0.7s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="signup-container" id="role-selection-container">
+        <div class="logo">
+            <h1>NexFlow</h1>
+            <p id="typing-text" style="font-size:1.3rem; color:#6B7280; min-height:2.5rem;">Are you a...?</p>
+        </div>
+        <div id="role-options" style="display:flex; margin-top:2rem;">
+            <button class="role-btn visible" id="patient-btn">Patient</button>
+            <button class="role-btn visible" id="clinician-btn">Clinician</button>
+        </div>
+    </div>
+    <div class="signup-container" id="signup-form-container" style="display:none;">
+        <div class="logo">
+            <h1>NexFlow</h1>
+            <p id="signup-role-label">Create Your Account</p>
+        </div>
+        <form id="signup-form" onsubmit="handleSignup(event)">
+            <div class="form-group" id="clinic-id-group" style="display:none;">
+                <label id="clinic-id-label" for="clinic-id">Clinic ID</label>
+                <input type="text" id="clinic-id" name="clinic-id" maxlength="6" pattern="\d{6}" inputmode="numeric" autocomplete="one-time-code" placeholder="Enter 6-digit Clinic ID">
+                <div class="error-message" id="clinic-id-error"></div>
+            </div>
+            <div class="form-group">
+                <label for="name">Full Name</label>
+                <input type="text" id="name" name="name" required placeholder="Enter your full name">
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required placeholder="Enter your email">
+                <div class="error-message" id="email-error"></div>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" autocomplete="off" id="password" name="password" required placeholder="Create a password">
+                <div class="error-message" id="password-error"></div>
+            </div>
+            <div class="form-group">
+                <label for="confirm-password">Confirm Password</label>
+                <input type="password" autocomplete="off" id="confirm-password" name="confirm-password" required placeholder="Confirm your password">
+                <div class="error-message" id="confirm-password-error"></div>
+            </div>
+            <div class="terms">
+                <input type="checkbox" id="terms" required />
+                <label for="terms">I agree to the <a style="color: var(--primary-color); text-decoration: none; cursor:pointer;" onclick="showTOSModal(event)">Terms of Service</a> and <a style="color: var(--primary-color); text-decoration: none; cursor:pointer;" onclick="showTOSModal(event)">Privacy Policy</a></label>
+            </div>
+            <button type="submit" class="signup-button">Create Free Account</button>
+            <div class="login-link">Already have an account? <a href="index.html">Log in</a></div>
+        </form>
+    </div>
+    <noscript>
+        <style>#role-selection-container{display:none!important;}#signup-form-container{display:block!important;}</style>
+        <div class="signup-container">
+            <div class="logo"><h1>NexFlow</h1></div>
+            <p>JavaScript is required for the full signup experience. Please enable JavaScript.</p>
+            <form>
+                <div class="form-group"><label>Email</label><input type="email" required></div>
+                <div class="form-group"><label>Password</label><input type="password" required></div>
+                <button type="submit" class="signup-button">Sign Up</button>
+            </form>
+        </div>
+    </noscript>
+
+    <!-- Terms of Service Modal (copied from irscore.html) -->
+    <div id="tos-modal" style="
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.7);
+        z-index: 9999;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        padding: 2rem;
+    ">
+        <div style="
+            background: white;
+            color: black;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border-radius: 12px;
+            padding: 2rem;
+            font-family: 'Poppins', sans-serif;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            position: relative;
+        ">
+            <button onclick="closeTOSModal()" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            <h2 style="margin-top: 0;">Legal Disclaimer – NexFlow Closed Beta</h2>
+            <ol style="padding-left: 1.2rem; font-size: 0.95rem;">
+                <li><strong>Non-Medical Use Only</strong><br>NexFlow is for educational/informational use only. It is not a medical device.</li>
+                <li><strong>Not FDA-Approved</strong><br>NexFlow is not reviewed/approved by the FDA or any medical agency.</li>
+                <li><strong>No Clinical Use Permitted</strong><br>Do not use NexFlow for diagnosis or medical decisions.</li>
+                <li><strong>Beta Status & Reliability</strong><br>NexFlow is in closed beta and may be unreliable or incomplete.</li>
+                <li><strong>Limitation of Liability</strong><br>Use at your own risk. NexFlow is not liable for any damages.</li>
+                <li><strong>User Responsibility</strong><br>You are solely responsible for how you use the platform.</li>
+                <li><strong>Data Usage & Privacy</strong><br>We may collect anonymous usage data. No PHI is stored.</li>
+                <li><strong>Minors & Parental Consent</strong><br>If under 18, you need parental/guardian permission.</li>
+                <li><strong>Consent to Participate in Beta</strong><br>By continuing, you agree to join the beta program.</li>
+            </ol>
+            <p><strong>If you do not agree with these terms, please do not use the platform.</strong></p>
+            <div style="text-align: right; margin-top: 1.5rem;">
+                <button onclick="closeTOSModal()" style="
+                    padding: 0.6rem 1.2rem;
+                    font-weight: bold;
+                    font-size: 1rem;
+                    border: none;
+                    border-radius: 8px;
+                    background: #6366F1;
+                    color: white;
+                    cursor: pointer;
+                    transition: background 0.2s;
+                ">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Popup Modal -->
+    <div class="popup-overlay" id="popup-overlay">
+        <div class="popup-modal">
+            <div class="popup-icon" id="popup-icon" aria-hidden="true"></div>
+            <div class="popup-title" id="popup-title">Title</div>
+            <div class="popup-message" id="popup-message">Message</div>
+            <div class="popup-buttons" id="popup-buttons">
+                <button class="popup-button primary" onclick="closePopup()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Web3 Libraries -->
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
+    <script src="web3-auth.js"></script>
+    <script>
+        const API_BASE_URL = window.web3Auth?.API_BASE_URL || "https://api.nexflowai.app/";
+
+        const ICONS = {
+            info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11.25 11.25h1.5v5.25h-1.5z" /><path d="M12 8.25h.008v.008H12V8.25z" /><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
+            success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12.75l2.25 2.25L15 11.25" /><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
+            error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.75 9.75l4.5 4.5" /><path d="M14.25 9.75l-4.5 4.5" /><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
+            warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8.25v4.5" /><path d="M12 16.5h.007" /><path d="M10.29 3.86a1.125 1.125 0 011.92 0l8.154 14.508A1.125 1.125 0 0119.404 20.25H4.596a1.125 1.125 0 01-.96-1.882L10.29 3.86z" /></svg>'
+        };
+
+        const popupIconElement = document.getElementById('popup-icon');
+        if (popupIconElement) {
+            popupIconElement.innerHTML = ICONS.info;
+            popupIconElement.classList.add('popup-icon--info');
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Localhost bypass - redirect to dashboard
+            if (window.web3Auth?.isLocalhost()) {
+                window.location.href = 'clinical-dashboard.html';
+                return;
+            }
+        });
+        // Ensure CSRF cookie is set on page load
+        // fetch(`${API_BASE_URL}/api/session`, { credentials: 'include' });
+        // Helper to get CSRF token from cookie
+        function getCSRFToken() {
+            const match = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/);
+            return match ? decodeURIComponent(match[1]) : '';
+        }
+
+        let csrfToken = "";
+
+        async function initCSRF() {
+            const res = await fetch(`${API_BASE_URL}/api/session`, {
+                credentials: 'include'
+            });
+            const data = await res.json();
+            csrfToken = data.csrf_token;
+            // console.log("CSRF Token from server:", csrfToken);
+        }
+
+
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initCSRF();  // sets csrf cookie
+        });
+
+
+
+
+        async function handleSignup(event) {
+            event.preventDefault();
+            try {
+                // Localhost bypass
+                if (window.web3Auth?.isLocalhost()) {
+                    window.location.href = 'clinical-dashboard.html';
+                    return;
+                }
+
+                const name = document.getElementById('name').value;
+                const errorElement = document.getElementById('email-error');
+                const clinicId = document.getElementById('clinic-id')?.value;
+                document.getElementById('clinic-id-error').style.display = 'none';
+
+                // Web3 Signup
+                if (selectedRole === 'clinician') {
+                    const cleanedClinicId = clinicId.trim().replace(/\D/g, '');
+                    if (!cleanedClinicId || cleanedClinicId.length !== 6) {
+                        document.getElementById('clinic-id-error').textContent = 'Valid 6-digit Clinic ID required';
+                        document.getElementById('clinic-id-error').style.display = 'block';
+                        return;
+                    }
+                } else if (selectedRole === 'patient') {
+                    const cleanedPatientId = clinicId.trim().replace(/\D/g, '');
+                    if (!cleanedPatientId || cleanedPatientId.length !== 6) {
+                        document.getElementById('clinic-id-error').textContent = 'Valid 6-digit Clinic Patient ID required';
+                        document.getElementById('clinic-id-error').style.display = 'block';
+                        return;
+                    }
+                }
+
+                const result = await window.web3Auth.web3Signup(name, selectedRole, clinicId);
+                if (result.success) {
+                    if (result.role === 'clinician') {
+                        window.location.href = 'clinical-dashboard.html';
+                    } else {
+                        window.location.href = 'irscore.html';
+                    }
+                }
+            } catch (error) {
+                const errorElement = document.getElementById('email-error');
+                const errorMessage = error.message || 'Failed to connect wallet. Please make sure MetaMask is installed and unlocked.';
+                errorElement.textContent = errorMessage;
+                errorElement.style.display = 'block';
+                showAlert(errorMessage, 'error');
+            }
+        }
+
+        async function upgradeToPro(plan) {
+            try {
+                await initCSRF();  // First: set cookie
+                // const csrfToken = getCSRFToken();  // Then: read it from cookie
+
+                const response = await fetch(`${API_BASE_URL}/api/upgrade-to-pro`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+                    credentials: 'include',
+                    body: JSON.stringify({ plan })
+                });
+
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showAlert('Redirecting to payment page...', 'info');
+                } else {
+                    showAlert(data.message || 'Error upgrading to pro', 'error');
+                }
+            } catch (error) {
+                console.error('Upgrade error:', error);
+                showAlert('Error processing upgrade. Please try again.', 'error');
+            }
+        }
+
+        function showTOSModal(event) {
+            event.preventDefault();
+            document.getElementById('tos-modal').style.display = 'flex';
+        }
+        function closeTOSModal() {
+            document.getElementById('tos-modal').style.display = 'none';
+        }
+
+        // Popup Modal Functions
+        function showPopup(title, message, type = 'info', buttons = ['OK']) {
+            const overlay = document.getElementById('popup-overlay');
+            const icon = document.getElementById('popup-icon');
+            const titleEl = document.getElementById('popup-title');
+            const messageEl = document.getElementById('popup-message');
+            const buttonsEl = document.getElementById('popup-buttons');
+
+            const iconMarkup = ICONS[type] || ICONS.info;
+            icon.innerHTML = iconMarkup;
+            icon.className = `popup-icon popup-icon--${type}`;
+
+            titleEl.textContent = title;
+            messageEl.textContent = message;
+
+            // Create buttons
+            buttonsEl.innerHTML = '';
+            buttons.forEach((button, index) => {
+                const btn = document.createElement('button');
+                btn.textContent = button.text || button;
+                btn.className = `popup-button ${index === 0 ? 'primary' : 'secondary'}`;
+                btn.onclick = button.onclick || (() => closePopup());
+                buttonsEl.appendChild(btn);
+            });
+
+            overlay.style.display = 'flex';
+        }
+
+        function closePopup() {
+            document.getElementById('popup-overlay').style.display = 'none';
+        }
+
+        // Replace alert with popup
+        function showAlert(message, type = 'info') {
+            showPopup('Notice', message, type);
+        }
+
+        // Role selection logic
+        let selectedRole = 'patient';
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check for role in hash or sessionStorage
+            let roleFromHash = (window.location.hash === '#clinician' || window.location.hash === '#patient') ? window.location.hash.replace('#','') : null;
+            let roleFromSession = sessionStorage.getItem('selectedRole');
+            let role = roleFromHash || roleFromSession;
+            if (role === 'clinician' || role === 'patient') {
+                selectedRole = role;
+                document.getElementById('role-selection-container').style.display = 'none';
+                document.getElementById('signup-form-container').style.display = 'block';
+                document.getElementById('signup-role-label').textContent = 'Sign up as ' + role.charAt(0).toUpperCase() + role.slice(1);
+                const group = document.getElementById('clinic-id-group');
+                const label = document.getElementById('clinic-id-label');
+                if (role === 'clinician') {
+                    group.style.display = 'block';
+                    label.textContent = 'Clinic ID';
+                    document.getElementById('clinic-id').placeholder = 'Enter 6-digit Clinic ID';
+                } else {
+                    group.style.display = 'block';
+                    label.textContent = 'Clinic Patient ID';
+                    document.getElementById('clinic-id').placeholder = 'Enter 6-digit Clinic Patient ID';
+                }
+            } else {
+                // Show role selection if no role is found
+                document.getElementById('role-selection-container').style.display = 'flex';
+                document.getElementById('signup-form-container').style.display = 'none';
+            }
+            // Role selection buttons
+            document.getElementById('patient-btn').onclick = () => showSignupForm('patient');
+            document.getElementById('clinician-btn').onclick = () => showSignupForm('clinician');
+            function showSignupForm(role) {
+                selectedRole = role;
+                sessionStorage.setItem('selectedRole', role);
+                document.getElementById('role-selection-container').style.display = 'none';
+                document.getElementById('signup-form-container').style.display = 'block';
+                document.getElementById('signup-role-label').textContent = 'Sign up as ' + role.charAt(0).toUpperCase() + role.slice(1);
+                const group = document.getElementById('clinic-id-group');
+                const label = document.getElementById('clinic-id-label');
+                if (role === 'clinician') {
+                    group.style.display = 'block';
+                    label.textContent = 'Clinic ID';
+                    document.getElementById('clinic-id').placeholder = 'Enter 6-digit Clinic ID';
+                } else {
+                    group.style.display = 'block';
+                    label.textContent = 'Clinic Patient ID';
+                    document.getElementById('clinic-id').placeholder = 'Enter 6-digit Clinic Patient ID';
+                }
+            }
+        });
+    </script>
+</body>
+</html> 

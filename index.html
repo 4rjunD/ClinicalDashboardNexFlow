@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexFlow — Clinician Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #FFFFFF;
+            padding: 2.5rem;
+        }
+
+        .auth-card {
+            width: 100%;
+            max-width: 420px;
+            background: #FFFFFF;
+            border-radius: 0;
+            padding: 3rem 3.25rem;
+            box-shadow: 8px 8px 0 0 #000000;
+            border: 2px solid #000000;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .brand h1 {
+            font-size: 2.6rem;
+            font-weight: 800;
+            color: #000000;
+            letter-spacing: -0.02em;
+        }
+
+        .brand .subtitle {
+            margin-top: 0.75rem;
+            color: #6B7280;
+            font-size: 1.05rem;
+        }
+
+        .role-toggle {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .role-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.65rem;
+            border-radius: 0;
+            border: 2px solid #000000;
+            padding: 0.95rem 1.25rem;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #FFFFFF;
+            color: #000000;
+        }
+
+        .role-btn .soon-tag {
+            margin-left: 0.35rem;
+            background: #000000;
+            color: #FFFFFF;
+            padding: 0.2rem 0.55rem;
+            border-radius: 0;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 2px solid #000000;
+        }
+
+        .role-btn.active {
+            background: #000000;
+            color: #FFFFFF;
+            box-shadow: 4px 4px 0 0 #000000;
+        }
+
+        .role-btn.disabled {
+            cursor: not-allowed;
+            border-color: #E5E7EB;
+            background: #F9FAFB;
+            color: #9CA3AF;
+            box-shadow: none;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+            position: relative;
+        }
+        
+        .password-wrapper {
+            position: relative;
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6B7280;
+            transition: color 0.2s ease;
+        }
+        
+        .password-toggle:hover {
+            color: #000000;
+        }
+        
+        .password-toggle svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        label {
+            font-weight: 500;
+            color: #374151;
+            font-size: 0.95rem;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            border-radius: 0;
+            border: 2px solid #000000;
+            background: white;
+            color: #000000;
+            font-size: 0.98rem;
+            transition: all 0.2s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #000000;
+            box-shadow: 4px 4px 0 0 #000000;
+        }
+
+        .primary-btn,
+        .secondary-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            border-radius: 0;
+            padding: 0.9rem 1.1rem;
+            font-weight: 600;
+            font-size: 1rem;
+            border: 2px solid #000000;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .primary-btn {
+            background: #000000;
+            color: #FFFFFF;
+            box-shadow: none;
+        }
+
+        .primary-btn:hover {
+            background: #FFFFFF;
+            color: #000000;
+            box-shadow: 4px 4px 0 0 #000000;
+        }
+
+        .secondary-btn {
+            background: #FFFFFF;
+            color: #000000;
+            border: 2px solid #E5E7EB;
+        }
+
+        .secondary-btn.disabled {
+            cursor: not-allowed;
+            opacity: 0.65;
+        }
+
+        .error-message {
+            color: #EF4444;
+            font-size: 0.9rem;
+            min-height: 1.1rem;
+        }
+
+        .icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon svg {
+            width: 1.1rem;
+            height: 1.1rem;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100%);
+            background: #000000;
+            color: #FFFFFF;
+            padding: 0.85rem 1.2rem;
+            border-radius: 0;
+            border: 2px solid #000000;
+            font-size: 0.9rem;
+            box-shadow: 4px 4px 0 0 #000000;
+            opacity: 0;
+            transition: transform 0.25s ease, opacity 0.25s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        @media (max-width: 520px) {
+            body {
+                padding: 1.5rem;
+            }
+            .auth-card {
+                padding: 2.5rem 2.25rem;
+            }
+            .brand h1 {
+                font-size: 2.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-card">
+        <div class="brand">
+            <h1>NexFlow</h1>
+            <p class="subtitle">Proof-of-concept clinician access</p>
+        </div>
+
+        <div class="role-toggle" role="group" aria-label="Login role">
+            <button type="button" class="role-btn active" id="clinician-btn">
+                <span class="icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 14.25c2.485 0 4.5-2.239 4.5-5S14.485 4.25 12 4.25 7.5 6.489 7.5 9s2.015 5.25 4.5 5.25z" />
+                        <path d="M6.75 19.75c0-2.347 2.12-4.25 5.25-4.25s5.25 1.903 5.25 4.25" />
+                    </svg>
+                </span>
+                Clinician Login
+            </button>
+            <button type="button" class="role-btn disabled" id="patient-btn" aria-disabled="true">
+                <span class="icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 14.25c2.485 0 4.5-2.239 4.5-5S14.485 4.25 12 4.25 7.5 6.489 7.5 9s2.015 5.25 4.5 5.25z" />
+                        <path d="M3.75 20c0-3.182 3.134-5.75 8.25-5.75s8.25 2.568 8.25 5.75" />
+                    </svg>
+                </span>
+                Patient Login <span class="soon-tag">Soon</span>
+            </button>
+        </div>
+
+        <form id="login-form" novalidate>
+            <div class="form-group">
+                <label for="name">Full Name</label>
+                <input type="text" id="name" name="name" autocomplete="name" placeholder="Enter your full name" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" autocomplete="email" placeholder="Enter your email" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="password-wrapper">
+                    <input type="password" id="password" name="password" autocomplete="current-password" placeholder="Enter your password" required>
+                    <button type="button" class="password-toggle" id="password-toggle" aria-label="Toggle password visibility">
+                        <svg id="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M2.036 12.322a1.012 1.012 0 0 1 0-.644C3.423 7.88 7.36 5.25 12 5.25c4.64 0 8.577 2.63 9.964 6.428.07.21.07.434 0 .644C20.577 16.12 16.64 18.75 12 18.75c-4.64 0-8.577-2.63-9.964-6.428z"></path>
+                            <path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"></path>
+                        </svg>
+                        <svg id="eye-off-icon" style="display: none;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                            <line x1="1" y1="1" x2="23" y2="23"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <p class="error-message" id="login-error" role="alert"></p>
+            <button type="submit" class="primary-btn">
+                <span class="icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M15 12H3" />
+                        <path d="M10.5 7.5L15 12l-4.5 4.5" />
+                        <path d="M21 5v14" />
+                    </svg>
+                </span>
+                Continue
+            </button>
+        </form>
+
+        <button type="button" class="secondary-btn disabled" id="signup-btn" aria-disabled="true">
+            <span class="icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 17a4 4 0 100-8 4 4 0 000 8z" />
+                    <path d="M19.5 12a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z" />
+                    <path d="M12 9v3l1.5 1.5" />
+                </svg>
+            </span>
+            Sign Up (Coming Soon)
+        </button>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script>
+        const AUTH_KEY = 'nf_clinician_auth';
+        const NAME_KEY = 'nf_user_name';
+        const VALID_NAME = 'Guest Clinician';
+        const VALID_EMAIL = 'guest.clinician@gmail.com';
+        const VALID_PASSWORD = '123456789';
+        const VALID_NAME_2 = 'Y Combinator';
+        const VALID_EMAIL_2 = 'YC@gmail.com';
+        const VALID_NAME_3 = 'ZFellows Team';
+        const VALID_EMAIL_3 = 'team@zfellows.com';
+
+        const toast = document.getElementById('toast');
+        const form = document.getElementById('login-form');
+        const loginError = document.getElementById('login-error');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (sessionStorage.getItem(AUTH_KEY) === 'true') {
+                window.location.replace('clinical-dashboard.html');
+                return;
+            }
+
+            form.addEventListener('submit', handleLogin);
+            document.getElementById('patient-btn').addEventListener('click', () => showToast('Patient access is not available in this demo.'));
+            document.getElementById('signup-btn').addEventListener('click', () => showToast('Sign up will be available in a future release.'));
+            
+            // Password visibility toggle
+            const passwordToggle = document.getElementById('password-toggle');
+            const passwordInput = document.getElementById('password');
+            const eyeIcon = document.getElementById('eye-icon');
+            const eyeOffIcon = document.getElementById('eye-off-icon');
+            
+            passwordToggle.addEventListener('click', () => {
+                const isPassword = passwordInput.type === 'password';
+                passwordInput.type = isPassword ? 'text' : 'password';
+                eyeIcon.style.display = isPassword ? 'none' : 'block';
+                eyeOffIcon.style.display = isPassword ? 'block' : 'none';
+            });
+        });
+
+        function handleLogin(event) {
+            event.preventDefault();
+            const name = form.name.value.trim();
+            const email = form.email.value.trim().toLowerCase();
+            const password = form.password.value;
+
+            // Check for valid name-email-password combinations
+            const validCombinations = [
+                { name: VALID_NAME, email: VALID_EMAIL, password: VALID_PASSWORD },
+                { name: VALID_NAME_2, email: VALID_EMAIL_2, password: VALID_PASSWORD },
+                { name: VALID_NAME_3, email: VALID_EMAIL_3, password: VALID_PASSWORD }
+            ];
+
+            const isValid = validCombinations.some(combo => 
+                name === combo.name && email === combo.email && password === combo.password
+            );
+
+            if (isValid) {
+                sessionStorage.setItem(AUTH_KEY, 'true');
+                sessionStorage.setItem(NAME_KEY, name);
+                window.location.replace('clinical-dashboard.html');
+                return;
+            }
+
+            loginError.textContent = 'Those credentials are not recognised in this proof-of-concept.';
+            showToast('Access denied. Use the sandbox clinician credentials.');
+        }
+
+        function showToast(message) {
+            toast.textContent = '';
+            const iconWrapper = document.createElement('span');
+            iconWrapper.className = 'icon';
+            iconWrapper.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 17h.01" />
+                    <path d="M12 7v6" />
+                    <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>`;
+
+            const textNode = document.createElement('span');
+            textNode.textContent = message;
+
+            toast.appendChild(iconWrapper);
+            toast.appendChild(textNode);
+
+            toast.classList.add('show');
+            clearTimeout(showToast.timeout);
+            showToast.timeout = setTimeout(() => toast.classList.remove('show'), 2600);
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-DX2DMYF5GM"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-DX2DMYF5GM');
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexFlow - Insulin Resistance Calculator</title>
+    <!-- Web3 Libraries -->
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
+    <script src="web3-auth.js"></script>
+    <script>
+        // Immediate check before anything else loads (Web3 or localhost)
+        async function checkSessionOrRedirect() {
+            // Wait for web3-auth to load
+            if (!window.web3Auth) {
+                setTimeout(checkSessionOrRedirect, 100);
+                return;
+            }
+
+            // Localhost bypass
+            if (window.web3Auth.isLocalhost()) {
+                return; // Allow access
+            }
+
+            try {
+                const auth = await window.web3Auth.checkAuth();
+                if (!auth?.authenticated) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+                // Role check: if clinician, redirect
+                if (auth.role === 'clinician') {
+                    window.location.href = 'clinical-dashboard.html';
+                    return;
+                }
+                // else: stay on this page (patient)
+            } catch {
+                window.location.href = 'index.html';
+            }
+        }
+        checkSessionOrRedirect();
+    </script>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: var(--gradient);
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .welcome-container {
+            max-width: 1200px;
+            width: 100%;
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .welcome-text {
+            color: white;
+            padding: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .welcome-text h1 {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            animation: fadeInUp 1s ease;
+        }
+
+        .welcome-text p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            animation: fadeInUp 1s ease 0.2s;
+            animation-fill-mode: forwards;
+        }
+
+
+
+        .nav-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+            position: relative;
+        }
+
+        .nav-bar a {
+            color: white;
+            text-decoration: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .nav-bar a:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .nav-bar a.active {
+            background: var(--primary-color);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .logout-button {
+            position: absolute;
+            right: -120px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .logout-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .calculator-container {
+            margin-top: 4rem;
+            background: var(--card-background);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            animation: fadeInUp 1s ease 0.4s;
+            animation-fill-mode: forwards;
+            opacity: 0;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .form-section {
+            background: var(--card-background);
+            padding: 2rem;
+            border-radius: 10px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #E2E8F0;
+            border-radius: 5px;
+            font-family: 'Poppins', sans-serif;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .submit-container {
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .score-section {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.9), rgba(99, 102, 241, 0.9));
+            padding: 2rem;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+            margin-top: 2rem;
+            display: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .score-circle {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 2rem auto;
+            font-size: 3rem;
+            font-weight: 700;
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .score-label {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .score-description {
+            font-size: 1.1rem;
+            color: white;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .score-description ul {
+            text-align: left;
+            max-width: 500px;
+            margin: 1rem auto;
+            padding-left: 1.5rem;
+        }
+
+        .score-description li {
+            margin-bottom: 0.5rem;
+        }
+
+        .score-description p {
+            margin-bottom: 1rem;
+        }
+
+        /* Loading state styles */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        .loading-text {
+            color: #333;
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .loading-timer {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Popup Modal Styles */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            backdrop-filter: blur(5px);
+        }
+
+        .popup-modal {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            animation: popupSlideIn 0.3s ease-out;
+        }
+
+        @keyframes popupSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .popup-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1F2937;
+            margin-bottom: 1rem;
+        }
+
+        .popup-message {
+            color: #6B7280;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .popup-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .popup-button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 100px;
+        }
+
+        .popup-button.primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .popup-button.primary:hover {
+            background: #7C3AED;
+            transform: translateY(-1px);
+        }
+
+        .popup-button.secondary {
+            background: #E5E7EB;
+            color: #4B5563;
+        }
+
+        .popup-button.secondary:hover {
+            background: #D1D5DB;
+        }
+
+        .popup-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+        .popup-icon svg {
+            width: 2.6rem;
+            height: 2.6rem;
+        }
+        .popup-icon--success svg { color: #10B981; }
+        .popup-icon--error svg { color: #EF4444; }
+        .popup-icon--warning svg { color: #F59E0B; }
+        .popup-icon--info svg { color: #3B82F6; }
+
+        @media (max-width: 1024px) {
+            .form-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 0.5rem;
+                padding-top: 0;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .welcome-text h1 {
+                font-size: 2.5rem;
+            }
+
+            .welcome-text p {
+                font-size: 1.1rem;
+            }
+
+            .nav-bar {
+                flex-direction: row;
+                gap: 0.3rem;
+                padding: 0.3rem;
+                background: rgba(0, 0, 0, 0.3);
+            }
+
+            .nav-links {
+                flex-direction: row;
+                align-items: center;
+                gap: 0.3rem;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .nav-bar a {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.8rem;
+                border-radius: 15px;
+            }
+
+            .logout-button {
+                position: static;
+                margin-top: 0;
+                padding: 0.4rem 0.8rem;
+                font-size: 0.8rem;
+            }
+
+            .calculator-container {
+                margin-top: 3rem;
+                padding: 1rem;
+            }
+
+            .welcome-container {
+                margin-bottom: 1rem;
+            }
+
+            .welcome-text {
+                padding: 0.5rem;
+            }
+
+            .welcome-text h1 {
+                font-size: 1.8rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .welcome-text p {
+                font-size: 0.9rem;
+                margin-bottom: 1rem;
+            }
+
+
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav-bar" id="main-nav">
+        <div class="nav-links" id="nav-links"></div>
+    </nav>
+
+
+
+    <div class="calculator-container">
+        <div class="form-section">
+            <h2>Calculate Your IRScore</h2>
+            <form id="irscore-form" onsubmit="calculateIRScore(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="age">Age</label>
+                        <input type="number" id="age" name="age" required min="0" max="150">
+                    </div>
+                    <div class="form-group">
+                        <label for="gender">Gender</label>
+                        <select id="gender" name="gender" required>
+                            <option value="">Select gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="weight">Weight (lbs)</label>
+                        <input type="number" id="weight" name="weight" required min="0" max="1000">
+                    </div>
+                    <div class="form-group">
+                        <label for="height">Height (in.)</label>
+                        <input type="number" id="height" name="height" required min="0" max="250">
+                    </div>
+                    <div class="form-group">
+                        <label for="sleep">Sleep Quality</label>
+                        <select id="sleep" name="sleep" required>
+                            <option value="">Select sleep quality</option>
+                            <option value="excellent">Excellent (7-9 hours, good quality)</option>
+                            <option value="good">Good (6-7 hours, moderate quality)</option>
+                            <option value="fair">Fair (5-6 hours, poor quality)</option>
+                            <option value="poor">Poor (<5 hours, very poor quality)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="family-history">Family History of Diabetes</label>
+                        <select id="family-history" name="family-history" required>
+                            <option value="">Select family history</option>
+                            <option value="none">No family history</option>
+                            <option value="distant">Distant relative (grandparent, aunt/uncle)</option>
+                            <option value="close">Close relative (parent, sibling)</option>
+                            <option value="multiple">Multiple close relatives</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="activity">Activity Level</label>
+                        <select id="activity" name="activity" required>
+                            <option value="">Select activity level</option>
+                            <option value="Sedentary (little or no exercise)">Sedentary (little or no exercise)</option>
+                            <option value="Lightly Active (light exercise 1-3 days/week)">Lightly Active (light exercise 1-3 days/week)</option>
+                            <option value="Moderately Active (moderate exercise 3-5 days/week)">Moderately Active (moderate exercise 3-5 days/week)</option>
+                            <option value="Very Active (hard exercise 6-7 days/week)">Very Active (hard exercise 6-7 days/week)</option>
+                            <option value="Extra Active (very hard exercise & physical job)">Extra Active (very hard exercise & physical job)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="submit-container">
+                    <button type="submit" class="cta-button">Calculate Score</button>
+                </div>
+            </form>
+        </div>
+        <div class="score-section" id="score-section">
+            <h2>Your IRScore</h2>
+            <div class="score-circle" id="score-display">--</div>
+            <div class="score-label" id="score-label">Enter your data to calculate your score</div>
+            <div class="score-description" id="score-description">
+                Your IRScore is a measure of your insulin resistance risk level from 0 to 100.
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Calculating your IRScore...</div>
+            <div class="loading-timer" id="loading-timer">Time elapsed: 0s</div>
+        </div>
+    </div>
+
+    <!-- Popup Modal -->
+    <div class="popup-overlay" id="popup-overlay">
+        <div class="popup-modal">
+            <div class="popup-icon" id="popup-icon" aria-hidden="true"></div>
+            <div class="popup-title" id="popup-title">Title</div>
+            <div class="popup-message" id="popup-message">Message</div>
+            <div class="popup-buttons" id="popup-buttons">
+                <button class="popup-button primary" onclick="closePopup()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Terms of Service Modal -->
+<div id="tos-modal" style="
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7);
+    z-index: 9999;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+">
+    <div style="
+        background: white;
+        color: black;
+        max-width: 800px;
+        max-height: 90vh;
+        overflow-y: auto;
+        border-radius: 12px;
+        padding: 2rem;
+        font-family: 'Poppins', sans-serif;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    ">
+        <h2 style="margin-top: 0;">Legal Disclaimer – NexFlow Closed Beta</h2>
+        <ol style="padding-left: 1.2rem; font-size: 0.95rem;">
+            <li><strong>Non-Medical Use Only</strong><br>NexFlow is for educational/informational use only. It is not a medical device.</li>
+            <li><strong>Not FDA-Approved</strong><br>NexFlow is not reviewed/approved by the FDA or any medical agency.</li>
+            <li><strong>No Clinical Use Permitted</strong><br>Do not use NexFlow for diagnosis or medical decisions.</li>
+            <li><strong>Beta Status & Reliability</strong><br>NexFlow is in closed beta and may be unreliable or incomplete.</li>
+            <li><strong>Limitation of Liability</strong><br>Use at your own risk. NexFlow is not liable for any damages.</li>
+            <li><strong>User Responsibility</strong><br>You are solely responsible for how you use the platform.</li>
+            <li><strong>Data Usage & Privacy</strong><br>We may collect anonymous usage data. No PHI is stored.</li>
+            <li><strong>Minors & Parental Consent</strong><br>If under 18, you need parental/guardian permission.</li>
+            <li><strong>Consent to Participate in Beta</strong><br>By continuing, you agree to join the beta program.</li>
+        </ol>
+        <p><strong>If you do not agree with these terms, please do not use the platform.</strong></p>
+        <div style="text-align: right; margin-top: 1.5rem;">
+            <button onclick="acceptTOS()" style="
+                padding: 0.6rem 1.2rem;
+                font-weight: bold;
+                font-size: 1rem;
+                border: none;
+                border-radius: 8px;
+                background: #6366F1;
+                color: white;
+                cursor: pointer;
+                transition: background 0.2s;
+            ">I Agree</button>
+        </div>
+    </div>
+</div>
+
+    <script>
+        // Check if user has completed IRScore calculation
+        async function checkData(url) {
+            try {
+                // Check if user is authenticated first
+                const sessionRes = await fetch(`${API_BASE_URL}/api/session`, { credentials: 'include' });
+                if (!sessionRes.ok) {
+                    window.location.href = 'index.html';
+                    return false;
+                }
+                const sessionData = await sessionRes.json();
+                if (!sessionData.authenticated) {
+                    window.location.href = 'index.html';
+                    return false;
+                }
+
+                // Check if user has IRScore data (you may want to store this in backend)
+                // For now, we'll allow access and let the user calculate their score
+                return true;
+            } catch (error) {
+                console.error('Error checking data:', error);
+                window.location.href = 'index.html';
+                return false;
+            }
+        }
+
+        async function fetchAndDisplayIRScore() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/irscore`, { credentials: 'include' });
+                if (!res.ok) throw new Error('No IRScore data');
+                const data = await res.json();
+                if (data && data.score !== undefined) {
+                    document.getElementById('score-display').textContent = Math.round(data.score);
+                    const scoreLabel = document.getElementById('score-label');
+                    const scoreDescription = document.getElementById('score-description');
+                    // ... (rest of your score label logic, same as in calculateIRScore)
+                    if (data.score >= 81.8) {
+                        scoreLabel.textContent = 'Excellent Metabolic Health - optimal insulin sensitivity and low risk';
+                        scoreLabel.style.color = '#4ADE80';
+                        scoreDescription.innerHTML = `<p>Great news! Your metabolic health is in excellent shape.</p>\n<ul><li>Your body is very efficient at using insulin</li><li>Your blood sugar levels are well-regulated</li><li>Your metabolism is working optimally</li></ul>`;
+                    } else if (data.score >= 71.1) {
+                        scoreLabel.textContent = 'Good Metabolic Health - normal insulin sensitivity';
+                        scoreLabel.style.color = '#FCD34D';
+                        scoreDescription.innerHTML = `<p>Your metabolic health is in good shape, but there's room for improvement.</p>\n<ul><li>Your body handles insulin well</li><li>Your blood sugar levels are generally stable</li><li>Small lifestyle changes could make a big difference</li></ul>`;
+                    } else if (data.score >= 35.4) {
+                        scoreLabel.textContent = 'Moderate Metabolic Health - intermediate risk of insulin resistance';
+                        scoreLabel.style.color = '#FB923C';
+                        scoreDescription.innerHTML = `<p>Your metabolic health needs some attention.</p>\n<ul><li>Your body could be more efficient with insulin</li><li>Your blood sugar levels might fluctuate</li><li>Lifestyle changes could help</li></ul>`;
+                    } else {
+                        scoreLabel.textContent = 'Needs Attention - high risk of insulin resistance';
+                        scoreLabel.style.color = '#F87171';
+                        scoreDescription.innerHTML = `<p>Your metabolic health needs attention. But don't worry—changes can help!</p>\n<ul><li>Your body may struggle with insulin efficiency</li><li>Your blood sugar levels might be unstable</li><li>Try consulting your doctor and improving lifestyle</li></ul>`;
+                    }
+                    document.getElementById('score-section').style.display = 'block';
+                }
+            } catch {
+                // No IRScore data, keep score section hidden
+            }
+        }
+        // Fetch IRScore data on page load
+        window.addEventListener('DOMContentLoaded', fetchAndDisplayIRScore);
+
+        // Helper to get CSRF token from cookie
+        function getCSRFToken() {
+            const match = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/);
+            return match ? decodeURIComponent(match[1]) : '';
+        }
+
+        async function initCSRF() {
+            const res = await fetch(`${API_BASE_URL}/api/csrf`, { credentials: 'include' });
+            const data = await res.json();
+
+            // Small wait to ensure cookie is written (especially on Safari/Chrome strict mode)
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            return data.csrf_token;
+        }
+
+
+        async function calculateIRScore(event) {
+            event.preventDefault();
+
+            // Show loading overlay
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const loadingTimer = document.getElementById('loading-timer');
+            loadingOverlay.style.display = 'flex';
+            
+            // Start timer
+            const startTime = Date.now();
+            const timerInterval = setInterval(() => {
+                const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+                loadingTimer.textContent = `Time elapsed: ${elapsedSeconds}s`;
+            }, 1000);
+
+            try {
+                const token = await initCSRF();
+                // Small wait to ensure cookie is written
+                await new Promise(resolve => setTimeout(resolve, 50));
+                const age = parseInt(document.getElementById('age').value);
+                const genderStr = document.getElementById('gender').value;
+                const gender = genderStr === 'male' ? 1 : 0;
+                const weight = parseFloat(document.getElementById('weight').value);
+                const height = parseFloat(document.getElementById('height').value);
+                const bmi = weight / (height ** 2) * 703;
+
+                // Extract all fields
+                const sleep = document.getElementById('sleep').value;
+                const family_history = document.getElementById('family-history').value;
+                const activity = document.getElementById('activity').value;
+
+                // Update payload
+                const payload = { age, gender, bmi, weight, height, sleep, family_history, activity };
+
+                const response = await fetch(`${API_BASE_URL}/api/predict`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': token
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+
+                if (!response.ok) throw new Error(`API request failed with status ${response.status}`);
+                const result = await response.json();
+
+                // Debugging: see what the backend returns
+                // console.log('API result:', result);
+
+                let score;
+                if (result.body) {
+                    const bodyData = typeof result.body === 'string' ? JSON.parse(result.body) : result.body;
+                    score = bodyData.score;
+                } else if (result.score !== undefined) {
+                    score = result.score;
+                } else {
+                    throw new Error('Score not found in API response');
+                }
+
+                if (score === undefined || score === null) throw new Error('Invalid score value');
+
+                document.getElementById('score-display').textContent = Math.round(score);
+                const scoreLabel = document.getElementById('score-label');
+                const scoreDescription = document.getElementById('score-description');
+
+                // ... (rest of your score label logic)
+                if (score >= 81.8) {
+                    scoreLabel.textContent = 'Excellent Metabolic Health - optimal insulin sensitivity and low risk';
+                    scoreLabel.style.color = '#4ADE80';
+                    scoreDescription.innerHTML = `<p>Great news! Your metabolic health is in excellent shape.</p>
+                    <ul><li>Your body is very efficient at using insulin</li><li>Your blood sugar levels are well-regulated</li><li>Your metabolism is working optimally</li></ul>`;
+                } else if (score >= 71.1) {
+                    scoreLabel.textContent = 'Good Metabolic Health - normal insulin sensitivity';
+                    scoreLabel.style.color = '#FCD34D';
+                    scoreDescription.innerHTML = `<p>Your metabolic health is in good shape, but there's room for improvement.</p>
+                    <ul><li>Your body handles insulin well</li><li>Your blood sugar levels are generally stable</li><li>Small lifestyle changes could make a big difference</li></ul>`;
+                } else if (score >= 35.4) {
+                    scoreLabel.textContent = 'Moderate Metabolic Health - intermediate risk of insulin resistance';
+                    scoreLabel.style.color = '#FB923C';
+                    scoreDescription.innerHTML = `<p>Your metabolic health needs some attention.</p>
+                    <ul><li>Your body could be more efficient with insulin</li><li>Your blood sugar levels might fluctuate</li><li>Lifestyle changes could help</li></ul>`;
+                } else {
+                    scoreLabel.textContent = 'Needs Attention - high risk of insulin resistance';
+                    scoreLabel.style.color = '#F87171';
+                    scoreDescription.innerHTML = `<p>Your metabolic health needs attention. But don't worry—changes can help!</p>
+                    <ul><li>Your body may struggle with insulin efficiency</li><li>Your blood sugar levels might be unstable</li><li>Try consulting your doctor and improving lifestyle</li></ul>`;
+                }
+
+                document.getElementById('score-section').style.display = 'block';
+                document.getElementById('score-section').scrollIntoView({ behavior: 'smooth' });
+
+                // Store score data securely (send to backend)
+                await fetch(`${API_BASE_URL}/api/irscore`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': token },
+                    credentials: 'include',
+                    body: JSON.stringify({ age, gender, weight, height, bmi, sleep, family_history, activity, score })
+                });
+            } catch (error) {
+                console.error('Error calculating IRScore:', error);
+                showAlert(`There was an error calculating your IRScore: ${error.message}. Please try again later.`, 'error');
+            } finally {
+                // Hide loading overlay and clear timer
+                clearInterval(timerInterval);
+                loadingOverlay.style.display = 'none';
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                const token = await initCSRF();  // ensure CSRF is present
+                await fetch(`${API_BASE_URL}/api/logout`, { 
+                    method: 'POST', 
+                    credentials: 'include',
+                    headers: { 'X-CSRF-Token': token }
+                });
+            } catch (error) {
+                console.error('Logout error:', error);
+            } finally {
+                sessionStorage.clear();
+                sessionStorage.setItem('justLoggedOut', 'true');  // new flag
+                window.location.replace('index.html');
+            }
+        }
+
+        // Popup Modal Functions
+        function showPopup(title, message, type = 'info', buttons = ['OK']) {
+            const overlay = document.getElementById('popup-overlay');
+            const icon = document.getElementById('popup-icon');
+            const titleEl = document.getElementById('popup-title');
+            const messageEl = document.getElementById('popup-message');
+            const buttonsEl = document.getElementById('popup-buttons');
+
+            const iconMarkup = ICONS[type] || ICONS.info;
+            icon.innerHTML = iconMarkup;
+            icon.className = `popup-icon popup-icon--${type}`;
+
+            titleEl.textContent = title;
+            messageEl.textContent = message;
+
+            // Create buttons
+            buttonsEl.innerHTML = '';
+            buttons.forEach((button, index) => {
+                const btn = document.createElement('button');
+                btn.textContent = button.text || button;
+                btn.className = `popup-button ${index === 0 ? 'primary' : 'secondary'}`;
+                btn.onclick = button.onclick || (() => closePopup());
+                buttonsEl.appendChild(btn);
+            });
+
+            overlay.style.display = 'flex';
+        }
+
+        function closePopup() {
+            document.getElementById('popup-overlay').style.display = 'none';
+        }
+
+        // Replace alert with popup
+        function showAlert(message, type = 'info') {
+            showPopup('Notice', message, type);
+        }
+
+        // TOS modal logic - use sessionStorage instead of localStorage
+        function acceptTOS() {
+            // sessionStorage.setItem('agreedToTOS', 'true');
+            document.getElementById('tos-modal').style.display = 'none';
+        }
+
+        window.addEventListener('load', () => {
+            // const agreed = sessionStorage.getItem('agreedToTOS');
+            // if (agreed !== 'true') {
+            document.getElementById('tos-modal').style.display = 'flex';
+            // }
+        });
+
+        // Remove checkClinicianInvite, respondToInvite, and their invocation in DOMContentLoaded
+
+        async function renderNavBar() {
+            const navLinks = document.getElementById('nav-links');
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/user`, { credentials: 'include' });
+                if (!res.ok) throw new Error('Not authenticated');
+                const data = await res.json();
+                if (data.role === 'patient') {
+                    navLinks.innerHTML = `
+                        <a href="irscore.html" class="active">IRScore Calculator</a>
+                        <a href="recommendations.html">Recommendations</a>
+                        <a href="#" onclick="handleLogout()" class="logout-button">Logout</a>
+                    `;
+                } else if (data.role === 'clinician') {
+                    navLinks.innerHTML = `
+                        <a href="clinical-dashboard.html" class="active">Dashboard</a>
+                        <a href="#" onclick="handleLogout()" class="logout-button">Logout</a>
+                    `;
+                }
+            } catch {
+                navLinks.innerHTML = '';
+            }
+        }
+        window.addEventListener('DOMContentLoaded', renderNavBar);
+
+        const API_BASE_URL = window.web3Auth?.API_BASE_URL || 'https://api.nexflowai.app/';
+
+        const ICONS = {
+            info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11.25 11.25h1.5v5.25h-1.5z" /><path d="M12 8.25h.008v.008H12V8.25z" /><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
+            success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12.75l2.25 2.25L15 11.25" /><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
+            error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.75 9.75l4.5 4.5" /><path d="M14.25 9.75l-4.5 4.5" /><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
+            warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8.25v4.5" /><path d="M12 16.5h.007" /><path d="M10.29 3.86a1.125 1.125 0 011.92 0l8.154 14.508A1.125 1.125 0 0119.404 20.25H4.596a1.125 1.125 0 01-.96-1.882L10.29 3.86z" /></svg>'
+        };
+
+        const popupIconElement = document.getElementById('popup-icon');
+        if (popupIconElement) {
+            popupIconElement.innerHTML = ICONS.info;
+            popupIconElement.classList.add('popup-icon--info');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-DX2DMYF5GM"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-DX2DMYF5GM');
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexFlow - Trajectory Panel</title>
+    <script>
+        const API_BASE_URL = "https://api.nexflowai.app/";
+        async function checkSessionAndPlan() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/session`, { credentials: 'include' });
+                if (!res.ok) throw new Error('Not authenticated');
+                const data = await res.json();
+                if (!data.authenticated) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+                if (data.plan !== 'pro') {
+                    // Show modal popup for non-pro users
+                    document.body.insertAdjacentHTML('beforeend', `
+                        <div id="access-modal" style="
+                            position: fixed;
+                            top: 0; left: 0;
+                            width: 100vw; height: 100vh;
+                            background: rgba(0,0,0,0.7);
+                            z-index: 99999;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                        ">
+                            <div style="
+                                background: white;
+                                color: #1F2937;
+                                max-width: 400px;
+                                width: 90vw;
+                                border-radius: 16px;
+                                padding: 2rem 1.5rem;
+                                box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+                                text-align: center;
+                                font-family: 'Poppins', sans-serif;
+                            ">
+                                <h2 style="color: var(--primary-color); margin-bottom: 1rem;">Pro Feature</h2>
+                                <p style="font-size: 1.1rem; margin-bottom: 2rem;">This feature is only available with a full account. Please upgrade to access the Trajectory Panel.</p>
+                                <button id="modal-redirect-btn" style="
+                                    background: var(--gradient);
+                                    color: white;
+                                    border: none;
+                                    padding: 0.9rem 2rem;
+                                    border-radius: 8px;
+                                    font-size: 1rem;
+                                    font-weight: 500;
+                                    cursor: pointer;
+                                    transition: background 0.2s;
+                                ">Upgrade</button>
+                            </div>
+                        </div>
+                    `);
+                    document.getElementById('modal-redirect-btn').onclick = function() {
+                        window.location.replace('pricing.html');
+                    };
+                    return;
+                }
+            } catch {
+                window.location.href = 'index.html';
+            }
+        }
+        checkSessionAndPlan();
+        async function checkSessionOrRedirect() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/session`, { credentials: 'include' });
+                if (!res.ok) throw new Error('Not authenticated');
+                const data = await res.json();
+                if (!data.authenticated) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+                // Role check: if clinician, redirect
+                const userRes = await fetch(`${API_BASE_URL}/api/user`, { credentials: 'include' });
+                if (userRes.ok) {
+                    const userData = await userRes.json();
+                    if (userData.role === 'clinician') {
+                        window.location.href = 'clinical-dashboard.html';
+                        return;
+                    }
+                }
+                // else: stay on this page
+            } catch {
+                window.location.href = 'index.html';
+            }
+        }
+        checkSessionOrRedirect();
+    </script>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background: var(--gradient);
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .nav-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+            position: relative;
+        }
+
+        .nav-bar a {
+            color: white;
+            text-decoration: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .nav-bar a:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .nav-bar a.active {
+            background: var(--primary-color);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .logout-button {
+            position: absolute;
+            right: -120px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .logout-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 0.5rem;
+                padding-top: 0;
+            }
+
+            .nav-bar {
+                flex-direction: row;
+                gap: 0.3rem;
+                padding: 0.3rem;
+                background: rgba(0, 0, 0, 0.3);
+            }
+
+            .nav-links {
+                flex-direction: row;
+                align-items: center;
+                gap: 0.3rem;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .nav-bar a {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.8rem;
+                border-radius: 15px;
+            }
+
+            .logout-button {
+                position: static;
+                margin-top: 0;
+                padding: 0.4rem 0.8rem;
+                font-size: 0.8rem;
+            }
+
+            .container {
+                margin-top: 1rem;
+                padding: 1rem;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .header p {
+                font-size: 0.9rem;
+            }
+
+            .controls {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .control-group {
+                padding: 1rem;
+            }
+        }
+
+        .container {
+            margin-top: 4rem;
+            max-width: 1200px;
+            width: 100%;
+            background: var(--card-background);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .header {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .chart-container.animate {
+            animation: fadeInUp 1s ease-out forwards;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .control-group {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .control-group.animate {
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+
+        .control-group:nth-child(1).animate {
+            animation-delay: 0.2s;
+        }
+
+        .control-group:nth-child(2).animate {
+            animation-delay: 0.4s;
+        }
+
+        .control-group:nth-child(3).animate {
+            animation-delay: 0.6s;
+        }
+
+        .control-group h3 {
+            margin-bottom: 1.5rem;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .control-group h3::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--primary-color);
+        }
+
+        .toggle-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .toggle-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .toggle-item label {
+            font-weight: 500;
+            color: #4B5563;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .toggle-item input[type="range"] {
+            width: 100%;
+            height: 6px;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background: #E5E7EB;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        .toggle-item input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-item input[type="range"]::-moz-range-thumb {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .toggle-item input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .toggle-item .value {
+            font-size: 0.9rem;
+            color: var(--primary-color);
+            font-weight: 600;
+            min-width: 60px;
+            text-align: right;
+        }
+
+        .no-data-message {
+            text-align: center;
+            color: var(--primary-color);
+            padding: 2rem;
+        }
+
+        .no-data-message h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .no-data-message p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Animation styles */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideInFromLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .animate-fade-in-up {
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+
+        .animate-slide-in-left {
+            animation: slideInFromLeft 0.6s ease-out forwards;
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav-bar" id="main-nav">
+        <div class="nav-links" id="nav-links"></div>
+    </nav>
+
+    <div class="container" id="main-content" style="display: none;">
+        <div class="header">
+            <h1>Trajectory Panel</h1>
+            <p>See how different lifestyle changes affect your IRScore over time</p>
+        </div>
+
+        <div class="chart-container animate">
+            <canvas id="trajectoryChart"></canvas>
+        </div>
+
+        <div class="controls">
+            <div class="control-group animate">
+                <h3>Diet Changes</h3>
+                <div class="toggle-group">
+                    <div class="toggle-item">
+                        <label>Carbohydrate Intake</label>
+                        <input type="range" id="carbs" min="0" max="100" value="50">
+                        <span class="value">50%</span>
+                    </div>
+                    <div class="toggle-item">
+                        <label>Protein Intake</label>
+                        <input type="range" id="protein" min="0" max="100" value="50">
+                        <span class="value">50%</span>
+                    </div>
+                    <div class="toggle-item">
+                        <label>Fiber Intake</label>
+                        <input type="range" id="fiber" min="0" max="100" value="50">
+                        <span class="value">50%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-group animate">
+                <h3>Exercise</h3>
+                <div class="toggle-group">
+                    <div class="toggle-item">
+                        <label>Cardio Minutes/Week</label>
+                        <input type="range" id="cardio" min="0" max="300" value="150">
+                        <span class="value">150 min</span>
+                    </div>
+                    <div class="toggle-item">
+                        <label>Strength Training</label>
+                        <input type="range" id="strength" min="0" max="5" value="2">
+                        <span class="value">2x/week</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-group animate">
+                <h3>Sleep & Stress</h3>
+                <div class="toggle-group">
+                    <div class="toggle-item">
+                        <label>Sleep Hours</label>
+                        <input type="range" id="sleep" min="4" max="10" value="7" step="0.5">
+                        <span class="value">7 hrs</span>
+                    </div>
+                    <div class="toggle-item">
+                        <label>Stress Level</label>
+                        <input type="range" id="stress" min="0" max="100" value="50">
+                        <span class="value">50%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" id="no-data-message">
+        <div class="no-data-message">
+            <h2>No Data Available</h2>
+            <p>Please complete the IRScore Calculator first to view your trajectory.</p>
+            <a href="irscore.html" class="cta-button">Go to Calculator</a>
+        </div>
+    </div>
+
+    <script>
+        let userData = null;
+        async function fetchIRScoreData() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/irscore`, { credentials: 'include' });
+                if (!res.ok) throw new Error('No IRScore data');
+                userData = await res.json();
+            } catch {
+                userData = null;
+            }
+            checkUserData();
+            if (userData && userData.score !== undefined) {
+                initializeChartAndSliders();
+            }
+        }
+        // Show/hide content based on data availability
+        function checkUserData() {
+            const mainContent = document.getElementById('main-content');
+            const noDataMessage = document.getElementById('no-data-message');
+            if (userData && userData.score !== undefined) {
+                mainContent.style.display = 'block';
+                noDataMessage.style.display = 'none';
+                
+                // Trigger animations with a small delay
+                setTimeout(() => {
+                    const chartContainer = document.querySelector('.chart-container');
+                    const controlGroups = document.querySelectorAll('.control-group');
+                    
+                    chartContainer.classList.add('animate');
+                    controlGroups.forEach(group => group.classList.add('animate'));
+                }, 100);
+            } else {
+                mainContent.style.display = 'none';
+                noDataMessage.style.display = 'block';
+            }
+        }
+        // Initialize chart and sliders if userData exists
+        function initializeChartAndSliders() {
+            const ctx = document.getElementById('trajectoryChart').getContext('2d');
+            
+            // Start with all values at 0 for animation
+            const initialData = [0, 0, 0, 0, 0, 0];
+            
+            let chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
+                    datasets: [{
+                        label: 'IRScore Trajectory',
+                        data: initialData,
+                        borderColor: '#8B5CF6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { mode: 'index', intersect: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: Math.max(0, userData.score - 20),
+                            max: Math.min(100, userData.score + 20)
+                        }
+                    },
+                    animation: {
+                        duration: 1500,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+
+            // Initialize slider values and event handlers
+            const sliders = {
+                carbs: { element: document.getElementById('carbs'), value: 50, label: '%' },
+                protein: { element: document.getElementById('protein'), value: 50, label: '%' },
+                fiber: { element: document.getElementById('fiber'), value: 50, label: '%' },
+                cardio: { element: document.getElementById('cardio'), value: 150, label: ' min' },
+                strength: { element: document.getElementById('strength'), value: 2, label: 'x/week' },
+                sleep: { element: document.getElementById('sleep'), value: 7, label: ' hrs' },
+                stress: { element: document.getElementById('stress'), value: 50, label: '%' }
+            };
+
+            // Set initial values and add event listeners
+            Object.keys(sliders).forEach(key => {
+                const slider = sliders[key];
+                const valueSpan = slider.element.parentElement.querySelector('.value');
+                
+                // Set initial value display
+                valueSpan.textContent = slider.value + slider.label;
+                
+                // Add event listener
+                slider.element.addEventListener('input', function() {
+                    slider.value = parseFloat(this.value);
+                    valueSpan.textContent = slider.value + slider.label;
+                    updateTrajectory(chart, sliders);
+                });
+            });
+
+            // Animate the initial trajectory after a short delay
+            setTimeout(() => {
+                updateTrajectory(chart, sliders);
+            }, 500);
+        }
+
+        // Calculate trajectory based on slider values
+        function updateTrajectory(chart, sliders) {
+            const baseScore = userData.score;
+            const trajectory = [baseScore];
+            
+            // Calculate trajectory for 6 weeks
+            for (let week = 1; week < 6; week++) {
+                let scoreChange = 0;
+                
+                // Diet factors
+                const carbFactor = (sliders.carbs.value - 50) / 50; // -1 to 1
+                const proteinFactor = (sliders.protein.value - 50) / 50;
+                const fiberFactor = (sliders.fiber.value - 50) / 50;
+                
+                // Exercise factors
+                const cardioFactor = (sliders.cardio.value - 150) / 150;
+                const strengthFactor = (sliders.strength.value - 2) / 2;
+                
+                // Sleep and stress factors
+                const sleepFactor = (sliders.sleep.value - 7) / 2; // -1.5 to 1.5
+                const stressFactor = (50 - sliders.stress.value) / 50; // Inverse relationship
+                
+                // Calculate weekly change
+                scoreChange += carbFactor * -0.5; // Lower carbs = better score
+                scoreChange += proteinFactor * 0.3; // Higher protein = better score
+                scoreChange += fiberFactor * 0.4; // Higher fiber = better score
+                scoreChange += cardioFactor * 0.6; // More cardio = better score
+                scoreChange += strengthFactor * 0.4; // More strength = better score
+                scoreChange += sleepFactor * 0.3; // More sleep = better score
+                scoreChange += stressFactor * 0.5; // Less stress = better score
+                
+                // Apply weekly change with diminishing returns
+                const weeklyChange = scoreChange * (1 - week * 0.1);
+                const newScore = Math.max(0, Math.min(100, trajectory[week - 1] + weeklyChange));
+                trajectory.push(newScore);
+            }
+            
+            // Update chart data with animation
+            chart.data.datasets[0].data = trajectory;
+            chart.update('active'); // Use 'active' mode for smooth animation
+        }
+
+        // Fetch IRScore data on page load
+        window.addEventListener('DOMContentLoaded', fetchIRScoreData);
+
+        async function handleLogout() {
+            try {
+                const token = await initCSRF();  // ensure CSRF is present
+                await fetch(`${API_BASE_URL}/api/logout`, { 
+                    method: 'POST', 
+                    credentials: 'include',
+                    headers: { 'X-CSRF-Token': token }
+                });
+            } catch (error) {
+                console.error('Logout error:', error);
+            } finally {
+                sessionStorage.clear();
+                sessionStorage.setItem('justLoggedOut', 'true');  // new flag
+                window.location.replace('index.html');
+            }
+        }
+
+        // Helper to get CSRF token from cookie
+        function getCSRFToken() {
+            const match = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/);
+            return match ? decodeURIComponent(match[1]) : '';
+        }
+
+        async function initCSRF() {
+            const res = await fetch(`${API_BASE_URL}/api/csrf`, { credentials: 'include' });
+            const data = await res.json();
+
+            // Small wait to ensure cookie is written (especially on Safari/Chrome strict mode)
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            return data.csrf_token;
+        }
+
+        async function renderNavBar() {
+            const navLinks = document.getElementById('nav-links');
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/user`, { credentials: 'include' });
+                if (!res.ok) throw new Error('Not authenticated');
+                const data = await res.json();
+                if (data.role === 'patient') {
+                    navLinks.innerHTML = `
+                        <a href="irscore.html">IRScore Calculator</a>
+                        <a href="recommendations.html">Recommendations</a>
+                        <a href="#" onclick="handleLogout()" class="logout-button">Logout</a>
+                    `;
+                } else if (data.role === 'clinician') {
+                    navLinks.innerHTML = `
+                        <a href="clinical-dashboard.html" class="active">Dashboard</a>
+                        <a href="#" onclick="handleLogout()" class="logout-button">Logout</a>
+                    `;
+                }
+            } catch {
+                navLinks.innerHTML = '';
+            }
+        }
+        window.addEventListener('DOMContentLoaded', renderNavBar);
+    </script>
+</body>
+</html> 
