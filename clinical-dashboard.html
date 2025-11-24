@@ -2280,16 +2280,45 @@ const overallRiskClass = overallRiskScore !== null ? getRiskScoreClass(overallRi
             const exportCsvBtn = document.getElementById('exportCsvBtn');
             const exportPdfBtn = document.getElementById('exportPdfBtn');
             if (exportCsvBtn) {
-                exportCsvBtn.addEventListener('click', () => {
-                    const csv = buildPatientSummaryCSV(patient, trajectoryData, actionsByDisease);
-                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-                    const a = document.createElement('a');
-                    a.href = URL.createObjectURL(blob);
-                    a.download = `patient_${patient.id}_${String(patient.name || '').replace(/\s+/g, '_')}_summary.csv`;
-                    document.body.appendChild(a);
-                    a.click();
-                    URL.revokeObjectURL(a.href);
-                    a.remove();
+                exportCsvBtn.addEventListener('click', async () => {
+                    // Use FlowBase AI agent for comprehensive data export
+                    try {
+                        exportCsvBtn.disabled = true;
+                        exportCsvBtn.textContent = 'Exporting with AI...';
+                        
+                        const response = await fetch(`/api/flowbase/patient/${patient.id}/export/csv`);
+                        if (!response.ok) {
+                            throw new Error('FlowBase export failed');
+                        }
+                        
+                        const csv = await response.text();
+                        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                        const a = document.createElement('a');
+                        a.href = URL.createObjectURL(blob);
+                        a.download = `patient_${patient.id}_${String(patient.name || '').replace(/\s+/g, '_')}_flowbase_export_${new Date().toISOString().split('T')[0]}.csv`;
+                        document.body.appendChild(a);
+                        a.click();
+                        URL.revokeObjectURL(a.href);
+                        a.remove();
+                        
+                        showAlert('FlowBase CSV export completed! Data scraped and formatted by AI agent.', 'success');
+                    } catch (error) {
+                        console.error('FlowBase export error:', error);
+                        // Fallback to basic CSV export
+                        const csv = buildPatientSummaryCSV(patient, trajectoryData, actionsByDisease);
+                        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                        const a = document.createElement('a');
+                        a.href = URL.createObjectURL(blob);
+                        a.download = `patient_${patient.id}_${String(patient.name || '').replace(/\s+/g, '_')}_summary.csv`;
+                        document.body.appendChild(a);
+                        a.click();
+                        URL.revokeObjectURL(a.href);
+                        a.remove();
+                        showAlert('Used basic CSV export (FlowBase unavailable).', 'warning');
+                    } finally {
+                        exportCsvBtn.disabled = false;
+                        exportCsvBtn.textContent = 'Export CSV';
+                    }
                 });
             }
             if (exportPdfBtn) {
@@ -2526,16 +2555,45 @@ const overallRiskClass = overallRiskScore !== null ? getRiskScoreClass(overallRi
                 const _csvBtn = document.getElementById('exportCsvBtn');
                 const _pdfBtn = document.getElementById('exportPdfBtn');
                 if (_csvBtn) {
-                    _csvBtn.addEventListener('click', () => {
-                        const csv = buildPatientSummaryCSV(patient, trajectoryData, actionsByDisease);
-                        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-                        const a = document.createElement('a');
-                        a.href = URL.createObjectURL(blob);
-                        a.download = `patient_${patient.id}_${String(patient.name || '').replace(/\s+/g, '_')}_summary.csv`;
-                        document.body.appendChild(a);
-                        a.click();
-                        URL.revokeObjectURL(a.href);
-                        a.remove();
+                    _csvBtn.addEventListener('click', async () => {
+                        // Use FlowBase AI agent for comprehensive data export
+                        try {
+                            _csvBtn.disabled = true;
+                            _csvBtn.textContent = 'Exporting with AI...';
+                            
+                            const response = await fetch(`/api/flowbase/patient/${patient.id}/export/csv`);
+                            if (!response.ok) {
+                                throw new Error('FlowBase export failed');
+                            }
+                            
+                            const csv = await response.text();
+                            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                            const a = document.createElement('a');
+                            a.href = URL.createObjectURL(blob);
+                            a.download = `patient_${patient.id}_${String(patient.name || '').replace(/\s+/g, '_')}_flowbase_export_${new Date().toISOString().split('T')[0]}.csv`;
+                            document.body.appendChild(a);
+                            a.click();
+                            URL.revokeObjectURL(a.href);
+                            a.remove();
+                            
+                            showAlert('FlowBase CSV export completed! Data scraped and formatted by AI agent.', 'success');
+                        } catch (error) {
+                            console.error('FlowBase export error:', error);
+                            // Fallback to basic CSV export
+                            const csv = buildPatientSummaryCSV(patient, trajectoryData, actionsByDisease);
+                            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                            const a = document.createElement('a');
+                            a.href = URL.createObjectURL(blob);
+                            a.download = `patient_${patient.id}_${String(patient.name || '').replace(/\s+/g, '_')}_summary.csv`;
+                            document.body.appendChild(a);
+                            a.click();
+                            URL.revokeObjectURL(a.href);
+                            a.remove();
+                            showAlert('Used basic CSV export (FlowBase unavailable).', 'warning');
+                        } finally {
+                            _csvBtn.disabled = false;
+                            _csvBtn.textContent = 'Export CSV';
+                        }
                     });
                 }
                 if (_pdfBtn) {

@@ -13,6 +13,12 @@ yarn-error.log*
 .env.local
 .env.*.local
 
+# FlowBase data directory
+data/
+*.json
+!package.json
+!package-lock.json
+
 # OS
 .DS_Store
 Thumbs.db
