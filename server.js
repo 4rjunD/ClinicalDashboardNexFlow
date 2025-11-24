@@ -15,13 +15,21 @@ app.use(express.static(__dirname));
 const flowbase = new FlowBase('./data');
 const flowbaseAgent = new FlowBaseAgent(process.env.OPENAI_API_KEY);
 
-// Seed data on first run (only if data directory is empty)
+// Seed data on first run (check for correct patient IDs)
 // Use actual patient IDs from dashboard: '1', '2', '3', '4', '5', '6'
 const patientIds = ['1', '2', '3', '4', '5', '6'];
-if (flowbase.getAllPatientIds().length === 0) {
+const existingPatientIds = flowbase.getAllPatientIds();
+const needsSeeding = existingPatientIds.length === 0 || 
+                     !patientIds.every(id => existingPatientIds.includes(id));
+
+if (needsSeeding) {
   console.log('Initializing FlowBase with seed data...');
+  console.log(`Existing patient IDs: ${existingPatientIds.join(', ') || 'none'}`);
+  console.log(`Seeding patient IDs: ${patientIds.join(', ')}`);
   generateSeedData(flowbase, patientIds);
   console.log('✓ FlowBase seeded successfully');
+} else {
+  console.log(`FlowBase already has data for patients: ${existingPatientIds.join(', ')}`);
 }
 
 // Route for root - serve index.html
