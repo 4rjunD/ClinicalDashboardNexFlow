@@ -1,4 +1,6 @@
 // FlowBase AI Agent - Scrapes and formats patient data for CSV export
+const { deidentifyPatientData } = require('./deidentify');
+
 class FlowBaseAgent {
   constructor(openaiApiKey) {
     this.apiKey = openaiApiKey || process.env.OPENAI_API_KEY;
@@ -11,7 +13,9 @@ class FlowBaseAgent {
     }
 
     try {
-      const prompt = this.buildPrompt(patientData);
+      // De-identify patient data before sending to OpenAI
+      const deidentifiedData = deidentifyPatientData(patientData);
+      const prompt = this.buildPrompt(deidentifiedData);
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -63,17 +67,18 @@ Return ONLY the CSV content, with proper headers and comma-separated values.`
       // Clean up the response (remove markdown code blocks if present)
       return csvContent.replace(/```csv\n?/g, '').replace(/```\n?/g, '').trim();
     } catch (error) {
-      console.error('AI formatting error, using structured fallback:', error);
+      // Don't log error details that might contain PHI
       return this.formatDataStructured(patientData);
     }
   }
 
   buildPrompt(patientData) {
-    return `Format the following patient data into a standardized CSV:
+    // Use de-identified data (patientData should already be de-identified)
+    return `Format the following de-identified patient data into a standardized CSV:
 
-Patient ID: ${patientData.patientId}
-Created: ${patientData.createdAt}
-Last Updated: ${patientData.updatedAt}
+Patient Hash: ${patientData.patientIdHash || 'N/A'}
+Days Since Creation: ${patientData.daysSinceCreation || 'N/A'}
+Days Since Update: ${patientData.daysSinceUpdate || 'N/A'}
 
 Clinician Notes (${patientData.clinicianNotes?.length || 0} entries):
 ${JSON.stringify(patientData.clinicianNotes || [], null, 2)}
@@ -170,7 +175,6 @@ Format all this data into a comprehensive CSV with proper headers.`;
     
     if (rows.length === 1) {
       // Only header, no data
-      console.warn('No data rows found in patientData');
       return rows.join('\n');
     }
     

@@ -373,32 +373,78 @@
             });
         });
 
-        function handleLogin(event) {
+        async function handleLogin(event) {
             event.preventDefault();
             const name = form.name.value.trim();
             const email = form.email.value.trim().toLowerCase();
             const password = form.password.value;
 
-            // Check for valid name-email-password combinations
-            const validCombinations = [
-                { name: VALID_NAME, email: VALID_EMAIL, password: VALID_PASSWORD },
-                { name: VALID_NAME_2, email: VALID_EMAIL_2, password: VALID_PASSWORD },
-                { name: VALID_NAME_3, email: VALID_EMAIL_3, password: VALID_PASSWORD }
-            ];
+            // Clear any previous error
+            loginError.textContent = '';
+            
+            // Try backend authentication first
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ email, password })
+                });
 
-            const isValid = validCombinations.some(combo => 
-                name === combo.name && email === combo.email && password === combo.password
-            );
+                if (response.ok) {
+                    const data = await response.json();
+                    // Store name for welcome message
+                    sessionStorage.setItem(NAME_KEY, name);
+                    sessionStorage.setItem(AUTH_KEY, 'true');
+                    // Token is stored in HTTP-only cookie by server
+                    window.location.replace('clinical-dashboard.html');
+                    return;
+                } else {
+                    // Backend auth failed, try fallback client-side validation
+                    const validCombinations = [
+                        { name: VALID_NAME, email: VALID_EMAIL, password: VALID_PASSWORD },
+                        { name: VALID_NAME_2, email: VALID_EMAIL_2, password: VALID_PASSWORD },
+                        { name: VALID_NAME_3, email: VALID_EMAIL_3, password: VALID_PASSWORD }
+                    ];
 
-            if (isValid) {
-                sessionStorage.setItem(AUTH_KEY, 'true');
-                sessionStorage.setItem(NAME_KEY, name);
-                window.location.replace('clinical-dashboard.html');
-                return;
+                    const isValid = validCombinations.some(combo => 
+                        name === combo.name && email === combo.email && password === combo.password
+                    );
+
+                    if (isValid) {
+                        // For demo purposes, create a mock token for client-side validation
+                        sessionStorage.setItem(AUTH_KEY, 'true');
+                        sessionStorage.setItem(NAME_KEY, name);
+                        sessionStorage.setItem('authToken', 'demo-token-' + Date.now());
+                        window.location.replace('clinical-dashboard.html');
+                        return;
+                    }
+                }
+            } catch (error) {
+                // Network error - try fallback
+                const validCombinations = [
+                    { name: VALID_NAME, email: VALID_EMAIL, password: VALID_PASSWORD },
+                    { name: VALID_NAME_2, email: VALID_EMAIL_2, password: VALID_PASSWORD },
+                    { name: VALID_NAME_3, email: VALID_EMAIL_3, password: VALID_PASSWORD }
+                ];
+
+                const isValid = validCombinations.some(combo => 
+                    name === combo.name && email === combo.email && password === combo.password
+                );
+
+                if (isValid) {
+                    sessionStorage.setItem(AUTH_KEY, 'true');
+                    sessionStorage.setItem(NAME_KEY, name);
+                    sessionStorage.setItem('authToken', 'demo-token-' + Date.now());
+                    window.location.replace('clinical-dashboard.html');
+                    return;
+                }
             }
 
-            loginError.textContent = 'Those credentials are not recognised in this proof-of-concept.';
-            showToast('Access denied. Use the sandbox clinician credentials.');
+            loginError.textContent = 'Invalid credentials. Please try again.';
+            showToast('Access denied. Check your credentials.');
         }
 
         function showToast(message) {

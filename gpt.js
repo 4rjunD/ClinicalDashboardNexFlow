@@ -3,20 +3,33 @@
         ? (sessionStorage.getItem('OPENAI_API_KEY') || '')
         : '';
 
+    // De-identify patient data for OpenAI calls (remove all HIPAA identifiers)
+    function deidentifyForGPT(patient) {
+        if (!patient) return null;
+        return {
+            age: patient.age,
+            sex: patient.sex,
+            bmi: patient.bmi,
+            healthConditions: patient.healthConditions || []
+        };
+    }
+
     async function generateConditionRecommendationsWithGPT(conditions, patient, metricsByCondition, scoresByCondition) {
         const apiKey = DEFAULT_OPENAI_KEY;
         if (!apiKey) {
-            return { error: 'API key not set. Click “Set API Key” and paste your key.' };
+            return { error: 'API key not set. Click "Set API Key" and paste your key.' };
         }
 
+        // De-identify patient data before sending
+        const deidentifiedPatient = deidentifyForGPT({
+            age: metricsByCondition.common?.age,
+            sex: metricsByCondition.common?.sex,
+            bmi: metricsByCondition.common?.bmi,
+            healthConditions: conditions
+        });
+
         const payload = {
-            patient: {
-                id: patient.id,
-                name: patient.name,
-                age: metricsByCondition.common?.age,
-                sex: metricsByCondition.common?.sex,
-                bmi: metricsByCondition.common?.bmi
-            },
+            patient: deidentifiedPatient,
             conditions: conditions,
             metrics: metricsByCondition,
             scores: scoresByCondition
@@ -231,8 +244,11 @@
             return { error: 'API key not set. Click “Set API Key” and paste your key.' };
         }
 
+        // De-identify patient data before sending
+        const deidentifiedPatient = deidentifyForGPT(patient);
+
         const payload = {
-            patient: { id: patient.id, name: patient.name },
+            patient: deidentifiedPatient,
             conditions,
             metrics: metricsByCondition,
             rubrics: AI_RUBRICS
@@ -371,9 +387,12 @@
             return { error: 'API key not set. Click "Set API Key" and paste your key.' };
         }
 
+        // De-identify patient data before sending
+        const deidentifiedPatient = deidentifyForGPT(patient);
+
         const payload = {
             condition: 'diabetes',
-            patient: { id: patient.id, name: patient.name },
+            patient: deidentifiedPatient,
             metrics: metrics,
             rubric: AI_RUBRICS.diabetes
         };
@@ -454,9 +473,12 @@
             return { error: 'API key not set. Click "Set API Key" and paste your key.' };
         }
 
+        // De-identify patient data before sending
+        const deidentifiedPatient = deidentifyForGPT(patient);
+
         const payload = {
             condition: 'hypertension',
-            patient: { id: patient.id, name: patient.name },
+            patient: deidentifiedPatient,
             metrics: metrics,
             rubric: AI_RUBRICS.hypertension
         };
@@ -537,9 +559,12 @@
             return { error: 'API key not set. Click "Set API Key" and paste your key.' };
         }
 
+        // De-identify patient data before sending
+        const deidentifiedPatient = deidentifyForGPT(patient);
+
         const payload = {
             condition: 'heart-disease',
-            patient: { id: patient.id, name: patient.name },
+            patient: deidentifiedPatient,
             metrics: metrics,
             rubric: AI_RUBRICS['heart-disease']
         };
@@ -620,9 +645,12 @@
             return { error: 'API key not set. Click "Set API Key" and paste your key.' };
         }
 
+        // De-identify patient data before sending
+        const deidentifiedPatient = deidentifyForGPT(patient);
+
         const payload = {
             condition: 'asthma',
-            patient: { id: patient.id, name: patient.name },
+            patient: deidentifiedPatient,
             metrics: metrics,
             rubric: AI_RUBRICS.asthma
         };
@@ -703,9 +731,12 @@
             return { error: 'API key not set. Click "Set API Key" and paste your key.' };
         }
 
+        // De-identify patient data before sending
+        const deidentifiedPatient = deidentifyForGPT(patient);
+
         const payload = {
             condition: 'arthritis',
-            patient: { id: patient.id, name: patient.name },
+            patient: deidentifiedPatient,
             metrics: metrics,
             rubric: AI_RUBRICS.arthritis
         };
@@ -786,9 +817,12 @@
             return { error: 'API key not set. Click "Set API Key" and paste your key.' };
         }
 
+        // De-identify patient data before sending
+        const deidentifiedPatient = deidentifyForGPT(patient);
+
         const payload = {
             condition: 'parkinsons',
-            patient: { id: patient.id, name: patient.name },
+            patient: deidentifiedPatient,
             metrics: metrics,
             rubric: AI_RUBRICS.parkinsons
         };
@@ -873,15 +907,17 @@
             return { error: 'API key not set. Click "Set API Key" and paste your key.' };
         }
 
+        // De-identify patient data before sending
+        const deidentifiedPatient = deidentifyForGPT({
+            age: metrics.age,
+            sex: metrics.sex,
+            bmi: metrics.bmi,
+            healthConditions: patient.healthConditions || []
+        });
+
         const payload = {
             condition: 'diabetes',
-            patient: {
-                id: patient.id,
-                name: patient.name,
-                age: metrics.age,
-                sex: metrics.sex,
-                bmi: metrics.bmi
-            },
+            patient: deidentifiedPatient,
             metrics: metrics,
             scoreContext: scoreContext,
             focusAreas: ['glycemic control', 'weight management', 'physical activity', 'sleep quality', 'medication adherence']
@@ -956,15 +992,17 @@
             return { error: 'API key not set. Click "Set API Key" and paste your key.' };
         }
 
+        // De-identify patient data before sending
+        const deidentifiedPatient = deidentifyForGPT({
+            age: metrics.age,
+            sex: metrics.sex,
+            bmi: metrics.bmi,
+            healthConditions: patient.healthConditions || []
+        });
+
         const payload = {
             condition: 'hypertension',
-            patient: {
-                id: patient.id,
-                name: patient.name,
-                age: metrics.age,
-                sex: metrics.sex,
-                bmi: metrics.bmi
-            },
+            patient: deidentifiedPatient,
             metrics: metrics,
             scoreContext: scoreContext,
             focusAreas: ['blood pressure control', 'sodium reduction', 'weight management', 'alcohol moderation', 'regular exercise']
@@ -1039,15 +1077,17 @@
             return { error: 'API key not set. Click "Set API Key" and paste your key.' };
         }
 
+        // De-identify patient data before sending
+        const deidentifiedPatient = deidentifyForGPT({
+            age: metrics.age,
+            sex: metrics.sex,
+            bmi: metrics.bmi,
+            healthConditions: patient.healthConditions || []
+        });
+
         const payload = {
             condition: 'heart-disease',
-            patient: {
-                id: patient.id,
-                name: patient.name,
-                age: metrics.age,
-                sex: metrics.sex,
-                bmi: metrics.bmi
-            },
+            patient: deidentifiedPatient,
             metrics: metrics,
             scoreContext: scoreContext,
             focusAreas: ['lipid management', 'blood pressure control', 'smoking cessation', 'diabetes management', 'cardiac rehabilitation']
@@ -1122,15 +1162,17 @@
             return { error: 'API key not set. Click "Set API Key" and paste your key.' };
         }
 
+        // De-identify patient data before sending
+        const deidentifiedPatient = deidentifyForGPT({
+            age: metrics.age,
+            sex: metrics.sex,
+            bmi: metrics.bmi,
+            healthConditions: patient.healthConditions || []
+        });
+
         const payload = {
             condition: 'asthma',
-            patient: {
-                id: patient.id,
-                name: patient.name,
-                age: metrics.age,
-                sex: metrics.sex,
-                bmi: metrics.bmi
-            },
+            patient: deidentifiedPatient,
             metrics: metrics,
             scoreContext: scoreContext,
             focusAreas: ['inhaler technique', 'trigger avoidance', 'action plan adherence', 'peak flow monitoring', 'sleep quality']
@@ -1205,15 +1247,17 @@
             return { error: 'API key not set. Click "Set API Key" and paste your key.' };
         }
 
+        // De-identify patient data before sending
+        const deidentifiedPatient = deidentifyForGPT({
+            age: metrics.age,
+            sex: metrics.sex,
+            bmi: metrics.bmi,
+            healthConditions: patient.healthConditions || []
+        });
+
         const payload = {
             condition: 'arthritis',
-            patient: {
-                id: patient.id,
-                name: patient.name,
-                age: metrics.age,
-                sex: metrics.sex,
-                bmi: metrics.bmi
-            },
+            patient: deidentifiedPatient,
             metrics: metrics,
             scoreContext: scoreContext,
             focusAreas: ['pain management', 'joint-friendly exercise', 'weight management', 'medication adherence', 'assistive devices']
@@ -1288,15 +1332,17 @@
             return { error: 'API key not set. Click "Set API Key" and paste your key.' };
         }
 
+        // De-identify patient data before sending
+        const deidentifiedPatient = deidentifyForGPT({
+            age: metrics.age,
+            sex: metrics.sex,
+            bmi: metrics.bmi,
+            healthConditions: patient.healthConditions || []
+        });
+
         const payload = {
             condition: 'parkinsons',
-            patient: {
-                id: patient.id,
-                name: patient.name,
-                age: metrics.age,
-                sex: metrics.sex,
-                bmi: metrics.bmi
-            },
+            patient: deidentifiedPatient,
             metrics: metrics,
             scoreContext: scoreContext,
             focusAreas: ['medication timing', 'gait training', 'tremor management', 'sleep optimization', 'fall prevention']

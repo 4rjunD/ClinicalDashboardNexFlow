@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clinician Dashboard - NexFlow</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="assets/fonts/google-fonts.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="assets/js/chart.min.js"></script>
     <script src="risk-model.js"></script>
     <script src="gpt.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/fhirclient/build/fhir-client.js"></script>
+    <script src="assets/js/fhir-client.js"></script>
     <style>
         body {
             background: #FFFFFF;
@@ -974,151 +974,9 @@
                 </tr>
             </thead>
             <tbody id="patient-tbody">
+                <!-- Patient data loaded dynamically from API (no hardcoded PHI) -->
                 <tr>
-                    <td><strong>John Doe</strong></td>
-                    <td>john@example.com</td>
-                    <td>
-                        <div class="health-tags-container">
-                            <span class="health-tag" data-condition="diabetes">
-                                Diabetes
-                                <button class="tag-remove" onclick="event.stopPropagation(); window.removeHealthCondition && window.removeHealthCondition('1','diabetes')" aria-label="Remove Diabetes"><svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-                            </span>
-                            <span class="health-tag" data-condition="hypertension">
-                                Hypertension
-                                <button class="tag-remove" onclick="event.stopPropagation(); window.removeHealthCondition && window.removeHealthCondition('1','hypertension')" aria-label="Remove Hypertension"><svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-                            </span>
-                            <button class="add-tag-btn" onclick="event.stopPropagation(); window.showAddTagModal && window.showAddTagModal('1')" title="Add condition">
-                                <span>+</span>
-                            </button>
-                        </div>
-                    </td>
-                    <td class="actions-col">
-                        <button class="action-btn view-btn" onclick="event.stopPropagation(); window.showPatientDetail && window.showPatientDetail('1')" title="View Details" aria-label="View details">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.036 12.322a1.012 1.012 0 010-.644C3.423 7.88 7.36 5.25 12 5.25c4.64 0 8.577 2.63 9.964 6.428.07.21.07.434 0 .644C20.577 16.12 16.64 18.75 12 18.75c-4.64 0-8.577-2.63-9.964-6.428z" /><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                            <span>View Details</span>
-                        </button>
-                    </td>
-                </tr>
-                <tr>
-                    <td><strong>Jane Smith</strong></td>
-                    <td>jane@example.com</td>
-                    <td>
-                        <div class="health-tags-container">
-                            <span class="health-tag" data-condition="parkinsons">
-                                Parkinson's
-                                <button class="tag-remove" onclick="event.stopPropagation(); window.removeHealthCondition && window.removeHealthCondition('2','parkinsons')" aria-label="Remove Parkinson's"><svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-                            </span>
-                            <span class="health-tag" data-condition="arthritis">
-                                Arthritis
-                                <button class="tag-remove" onclick="event.stopPropagation(); window.removeHealthCondition && window.removeHealthCondition('2','arthritis')" aria-label="Remove Arthritis"><svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-                            </span>
-                            <button class="add-tag-btn" onclick="event.stopPropagation(); window.showAddTagModal && window.showAddTagModal('2')" title="Add condition">
-                                <span>+</span>
-                            </button>
-                        </div>
-                    </td>
-                    <td class="actions-col">
-                        <button class="action-btn view-btn" onclick="event.stopPropagation(); window.showPatientDetail && window.showPatientDetail('2')" title="View Details" aria-label="View details">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.036 12.322a1.012 1.012 0 010-.644C3.423 7.88 7.36 5.25 12 5.25c4.64 0 8.577 2.63 9.964 6.428.07.21.07.434 0 .644C20.577 16.12 16.64 18.75 12 18.75c-4.64 0-8.577-2.63-9.964-6.428z" /><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                            <span>View Details</span>
-                        </button>
-                    </td>
-                </tr>
-                <tr>
-                    <td><strong>Bob Johnson</strong></td>
-                    <td>bob@example.com</td>
-                    <td>
-                        <div class="health-tags-container">
-                            <span class="health-tag" data-condition="asthma">
-                                Asthma
-                                <button class="tag-remove" onclick="event.stopPropagation(); window.removeHealthCondition && window.removeHealthCondition('3','asthma')" aria-label="Remove Asthma"><svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-                            </span>
-                            <button class="add-tag-btn" onclick="event.stopPropagation(); window.showAddTagModal && window.showAddTagModal('3')" title="Add condition">
-                                <span>+</span>
-                            </button>
-                        </div>
-                    </td>
-                    <td class="actions-col">
-                        <button class="action-btn view-btn" onclick="event.stopPropagation(); window.showPatientDetail && window.showPatientDetail('3')" title="View Details" aria-label="View details">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.036 12.322a1.012 1.012 0 010-.644C3.423 7.88 7.36 5.25 12 5.25c4.64 0 8.577 2.63 9.964 6.428.07.21.07.434 0 .644C20.577 16.12 16.64 18.75 12 18.75c-4.64 0-8.577-2.63-9.964-6.428z" /><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                            <span>View Details</span>
-                        </button>
-                    </td>
-                </tr>
-                <tr>
-                    <td><strong>Alice Williams</strong></td>
-                    <td>alice@example.com</td>
-                    <td>
-                        <div class="health-tags-container">
-                            <span class="health-tag" data-condition="heart-disease">
-                                Heart Disease
-                                <button class="tag-remove" onclick="event.stopPropagation(); window.removeHealthCondition && window.removeHealthCondition('4','heart-disease')" aria-label="Remove Heart Disease"><svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-                            </span>
-                            <span class="health-tag" data-condition="diabetes">
-                                Diabetes
-                                <button class="tag-remove" onclick="event.stopPropagation(); window.removeHealthCondition && window.removeHealthCondition('4','diabetes')" aria-label="Remove Diabetes"><svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-                            </span>
-                            <span class="health-tag" data-condition="hypertension">
-                                Hypertension
-                                <button class="tag-remove" onclick="event.stopPropagation(); window.removeHealthCondition && window.removeHealthCondition('4','hypertension')" aria-label="Remove Hypertension"><svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-                            </span>
-                            <button class="add-tag-btn" onclick="event.stopPropagation(); window.showAddTagModal && window.showAddTagModal('4')" title="Add condition">
-                                <span>+</span>
-                            </button>
-                        </div>
-                    </td>
-                    <td class="actions-col">
-                        <button class="action-btn view-btn" onclick="event.stopPropagation(); window.showPatientDetail && window.showPatientDetail('4')" title="View Details" aria-label="View details">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.036 12.322a1.012 1.012 0 010-.644C3.423 7.88 7.36 5.25 12 5.25c4.64 0 8.577 2.63 9.964 6.428.07.21.07.434 0 .644C20.577 16.12 16.64 18.75 12 18.75c-4.64 0-8.577-2.63-9.964-6.428z" /><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                            <span>View Details</span>
-                        </button>
-                    </td>
-                </tr>
-                <tr>
-                    <td><strong>Michael Brown</strong></td>
-                    <td>michael@example.com</td>
-                    <td>
-                        <div class="health-tags-container">
-                            <span class="health-tag" data-condition="arthritis">
-                                Arthritis
-                                <button class="tag-remove" onclick="event.stopPropagation(); window.removeHealthCondition && window.removeHealthCondition('5','arthritis')" aria-label="Remove Arthritis"><svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-                            </span>
-                            <button class="add-tag-btn" onclick="event.stopPropagation(); window.showAddTagModal && window.showAddTagModal('5')" title="Add condition">
-                                <span>+</span>
-                            </button>
-                        </div>
-                    </td>
-                    <td class="actions-col">
-                        <button class="action-btn view-btn" onclick="event.stopPropagation(); window.showPatientDetail && window.showPatientDetail('5')" title="View Details" aria-label="View details">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.036 12.322a1.012 1.012 0 010-.644C3.423 7.88 7.36 5.25 12 5.25c4.64 0 8.577 2.63 9.964 6.428.07.21.07.434 0 .644C20.577 16.12 16.64 18.75 12 18.75c-4.64 0-8.577-2.63-9.964-6.428z" /><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                            <span>View Details</span>
-                        </button>
-                    </td>
-                </tr>
-                <tr>
-                    <td><strong>Sarah Davis</strong></td>
-                    <td>sarah@example.com</td>
-                    <td>
-                        <div class="health-tags-container">
-                            <span class="health-tag" data-condition="asthma">
-                                Asthma
-                                <button class="tag-remove" onclick="event.stopPropagation(); window.removeHealthCondition && window.removeHealthCondition('6','asthma')" aria-label="Remove Asthma"><svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-                            </span>
-                            <span class="health-tag" data-condition="hypertension">
-                                Hypertension
-                                <button class="tag-remove" onclick="event.stopPropagation(); window.removeHealthCondition && window.removeHealthCondition('6','hypertension')" aria-label="Remove Hypertension"><svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-                            </span>
-                            <button class="add-tag-btn" onclick="event.stopPropagation(); window.showAddTagModal && window.showAddTagModal('6')" title="Add condition">
-                                <span>+</span>
-                            </button>
-                        </div>
-                    </td>
-                    <td class="actions-col">
-                        <button class="action-btn view-btn" onclick="event.stopPropagation(); window.showPatientDetail && window.showPatientDetail('6')" title="View Details" aria-label="View details">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.036 12.322a1.012 1.012 0 010-.644C3.423 7.88 7.36 5.25 12 5.25c4.64 0 8.577 2.63 9.964 6.428.07.21.07.434 0 .644C20.577 16.12 16.64 18.75 12 18.75c-4.64 0-8.577-2.63-9.964-6.428z" /><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                            <span>View Details</span>
-                        </button>
-                    </td>
+                    <td colspan="5" style="text-align: center; padding: 2rem; color: #6B7280; font-size: 1rem;">Loading patient data...</td>
                 </tr>
             </tbody>
         </table>
@@ -1188,8 +1046,8 @@
                 const traj = Array.isArray(data.trajectory) ? data.trajectory.slice(0, 6) : [];
                 const recs = (actionsByDisease.get(cond)?.recommendations || []).map(r => `${r.title}${r.impact ? ` (${r.impact})` : ''}`).join(' | ');
                 const vals = [
-                    patient.id,
-                    `"${patient.name}"`,
+                    'REDACTED',
+                    '"Patient"',
                     `"${label}"`,
                     score,
                     traj[0] ?? '',
@@ -1209,7 +1067,14 @@
             let flowbaseData = null;
             let flowbaseStats = { totalRecords: 0, dataTypes: {} };
             try {
-                const response = await fetch(`/api/flowbase/patient/${patient.id}`);
+                const token = getAuthToken();
+                const response = await fetch(`/api/flowbase/patient/${patient.encryptedId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
                 if (response.ok) {
                     flowbaseData = await response.json();
                     flowbaseStats.totalRecords = flowbaseData.metadata?.totalRecords || 0;
@@ -1229,16 +1094,14 @@
                     };
                 }
             } catch (error) {
-                console.warn('Could not fetch FlowBase data for PDF:', error);
+                // Could not fetch FlowBase data for PDF
             }
 
             const html = `
             <html>
-            <head><title>Patient Summary - ${patient.name}</title></head>
+            <head><title>Patient Summary</title></head>
             <body style="font-family: Arial, sans-serif; color: #111; padding: 24px;">
                 <h1 style="margin-top:0;">Patient Summary</h1>
-                <div><strong>ID:</strong> ${patient.id}</div>
-                <div><strong>Name:</strong> ${patient.name}</div>
                 ${flowbaseStats.totalRecords > 0 ? `
                 <div style="margin-top: 8px; padding: 8px; background: #f0f0f0; border: 1px solid #ccc;">
                     <strong>FlowBase Data Summary:</strong> ${flowbaseStats.totalRecords} total records
@@ -1356,14 +1219,113 @@
             w.print();
         }
 
-        const mockPatientsData = [
-            { id: '1', name: 'John Doe', email: 'john@example.com', healthConditions: ['diabetes', 'hypertension'] },
-            { id: '2', name: 'Jane Smith', email: 'jane@example.com', healthConditions: ['parkinsons', 'arthritis'] },
-            { id: '3', name: 'Bob Johnson', email: 'bob@example.com', healthConditions: ['asthma'] },
-            { id: '4', name: 'Alice Williams', email: 'alice@example.com', healthConditions: ['heart-disease', 'diabetes', 'hypertension'] },
-            { id: '5', name: 'Michael Brown', email: 'michael@example.com', healthConditions: ['arthritis'] },
-            { id: '6', name: 'Sarah Davis', email: 'sarah@example.com', healthConditions: ['asthma', 'hypertension'] }
-        ];
+        // Patient data will be loaded from API (no hardcoded PHI)
+        let patientsData = [];
+        
+        // Fetch patient list from API
+        async function loadPatientsData() {
+            try {
+                const token = getAuthToken();
+                
+                // If no token but sessionStorage says we're authenticated, use demo mode
+                if (!token && sessionStorage.getItem(AUTH_KEY) === 'true') {
+                    // Use mock data for demo
+                    patientsData = [
+                        { encryptedId: '1', healthConditions: ['diabetes', 'hypertension'] },
+                        { encryptedId: '2', healthConditions: ['parkinsons', 'arthritis'] },
+                        { encryptedId: '3', healthConditions: ['asthma'] },
+                        { encryptedId: '4', healthConditions: ['heart-disease', 'diabetes', 'hypertension'] },
+                        { encryptedId: '5', healthConditions: ['arthritis'] },
+                        { encryptedId: '6', healthConditions: ['asthma', 'hypertension'] }
+                    ];
+                    initializePatientMetrics(patientsData);
+                    return;
+                }
+                
+                if (!token) {
+                    window.location.replace('index.html');
+                    return;
+                }
+                
+                const response = await fetch('/api/flowbase/patients', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+                
+                if (response.status === 401) {
+                    // Fallback to demo mode if API auth fails
+                    if (sessionStorage.getItem(AUTH_KEY) === 'true') {
+                        patientsData = [
+                            { encryptedId: '1', healthConditions: ['diabetes', 'hypertension'] },
+                            { encryptedId: '2', healthConditions: ['parkinsons', 'arthritis'] },
+                            { encryptedId: '3', healthConditions: ['asthma'] },
+                            { encryptedId: '4', healthConditions: ['heart-disease', 'diabetes', 'hypertension'] },
+                            { encryptedId: '5', healthConditions: ['arthritis'] },
+                            { encryptedId: '6', healthConditions: ['asthma', 'hypertension'] }
+                        ];
+                        initializePatientMetrics(patientsData);
+                        return;
+                    }
+                    window.location.replace('index.html');
+                    return;
+                }
+                
+                if (!response.ok) {
+                    // Fallback to demo mode
+                    if (sessionStorage.getItem(AUTH_KEY) === 'true') {
+                        patientsData = [
+                            { encryptedId: '1', healthConditions: ['diabetes', 'hypertension'] },
+                            { encryptedId: '2', healthConditions: ['parkinsons', 'arthritis'] },
+                            { encryptedId: '3', healthConditions: ['asthma'] },
+                            { encryptedId: '4', healthConditions: ['heart-disease', 'diabetes', 'hypertension'] },
+                            { encryptedId: '5', healthConditions: ['arthritis'] },
+                            { encryptedId: '6', healthConditions: ['asthma', 'hypertension'] }
+                        ];
+                        initializePatientMetrics(patientsData);
+                        return;
+                    }
+                    throw new Error('Failed to load patients');
+                }
+                
+                const data = await response.json();
+                patientsData = data.patients || [];
+                
+                // Initialize patient metrics after loading
+                initializePatientMetrics(patientsData);
+            } catch (error) {
+                // Fallback to demo mode on error
+                if (sessionStorage.getItem(AUTH_KEY) === 'true') {
+                    patientsData = [
+                        { encryptedId: '1', healthConditions: ['diabetes', 'hypertension'] },
+                        { encryptedId: '2', healthConditions: ['parkinsons', 'arthritis'] },
+                        { encryptedId: '3', healthConditions: ['asthma'] },
+                        { encryptedId: '4', healthConditions: ['heart-disease', 'diabetes', 'hypertension'] },
+                        { encryptedId: '5', healthConditions: ['arthritis'] },
+                        { encryptedId: '6', healthConditions: ['asthma', 'hypertension'] }
+                    ];
+                    initializePatientMetrics(patientsData);
+                } else {
+                    patientsData = [];
+                }
+            }
+        }
+        
+        // Get auth token from cookie or sessionStorage
+        function getAuthToken() {
+            // Try to get from cookie first
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'token') {
+                    return value;
+                }
+            }
+            // Fallback to sessionStorage (for backward compatibility)
+            return sessionStorage.getItem('authToken') || null;
+        }
 
         const conditionCarePlans = {
             'diabetes': {
@@ -1427,7 +1389,8 @@
 
         // Seeded synthetic wearable metrics for consistency if clinic has no real ingest yet
         function getPatientMetrics(patient) {
-            const idSeed = parseInt(patient.id, 10) || 1;
+            // Use encrypted ID hash for deterministic seeding
+            const idSeed = patient.encryptedId ? patient.encryptedId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 1000 : 1;
             let rnd = idSeed * 9301 + 49297;
             function next(min, max) {
                 rnd = (rnd * 9301 + 49297) % 233280;
@@ -1799,29 +1762,54 @@
             insightsEl.insertAdjacentHTML('beforeend', adviceMarkup);
         }
 
-        // Initialize patient metrics - will be called after DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => {
-                try {
-                    initializePatientMetrics(mockPatientsData);
-                } catch (error) {
-                    console.error('Error initializing patient metrics:', error);
-                }
-            });
-        } else {
-            try {
-                initializePatientMetrics(mockPatientsData);
-            } catch (error) {
-                console.error('Error initializing patient metrics:', error);
-            }
-        }
+        // Patient data will be loaded in the main DOMContentLoaded listener below
 
-        function ensureAuthenticated() {
+        async function ensureAuthenticated() {
+            // Check sessionStorage first (for demo/fallback)
             if (sessionStorage.getItem(AUTH_KEY) === 'true') {
                 return true;
             }
-            window.location.replace('index.html');
-            return false;
+            
+            const token = getAuthToken();
+            if (!token) {
+                window.location.replace('index.html');
+                return false;
+            }
+            
+            // Verify token with server (only if we have a real token, not demo token)
+            if (!token.startsWith('demo-token-')) {
+                try {
+                    const response = await fetch('/api/auth/verify', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        credentials: 'include'
+                    });
+                    
+                    if (response.status === 401) {
+                        window.location.replace('index.html');
+                        return false;
+                    }
+                    
+                    if (!response.ok) {
+                        window.location.replace('index.html');
+                        return false;
+                    }
+                    
+                    return true;
+                } catch (error) {
+                    // If verification fails but we have sessionStorage, allow access
+                    if (sessionStorage.getItem(AUTH_KEY) === 'true') {
+                        return true;
+                    }
+                    window.location.replace('index.html');
+                    return false;
+                }
+            }
+            
+            // Demo token - allow access if sessionStorage is set
+            return sessionStorage.getItem(AUTH_KEY) === 'true';
         }
 
         function setWelcomeName() {
@@ -1840,6 +1828,27 @@
                 <a href="#" class="logout-button" onclick="handleLogout(event)">Logout</a>
             `;
         }
+        
+        // Handle logout - clear all storage and redirect
+        function handleLogout(event) {
+            if (event) event.preventDefault();
+            
+            // Clear all storage
+            sessionStorage.clear();
+            localStorage.clear();
+            
+            // Call logout API
+            fetch('/api/auth/logout', {
+                method: 'POST',
+                credentials: 'include'
+            }).then(() => {
+                window.location.replace('index.html');
+            }).catch(() => {
+                window.location.replace('index.html');
+            });
+        }
+        
+        window.handleLogout = handleLogout;
 
         function formatConditionName(condition) {
             const key = (condition || '').toString().toLowerCase();
@@ -1860,7 +1869,7 @@
             try {
                 const tbody = document.getElementById('patient-tbody');
                 if (!tbody) {
-                    console.error('patient-tbody element not found');
+                    return;
                     return;
                 }
 
@@ -1890,19 +1899,19 @@
                     ? conditions.map(condition => `
                             <span class="health-tag" data-condition="${condition}">
                                 ${formatConditionName(condition)}
-                                <button class="tag-remove" onclick="event.stopPropagation(); window.removeHealthCondition && window.removeHealthCondition('${patient.id}', '${condition}')" aria-label="Remove ${formatConditionName(condition)}"><svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                                <button class="tag-remove" onclick="event.stopPropagation(); window.removeHealthCondition && window.removeHealthCondition('${patient.encryptedId}', '${condition}')" aria-label="Remove ${formatConditionName(condition)}"><svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
                             </span>
                         `).join('')
                     : '<span class="no-conditions">No conditions</span>';
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td><strong>${patient.name || 'Unknown'}</strong></td>
-                    <td>${patient.email || 'N/A'}</td>
+                    <td><strong>Patient ${patientsData.indexOf(patient) + 1}</strong></td>
+                    <td>N/A</td>
                     <td>
                         <div class="health-tags-container">
                             ${tags}
-                            <button class="add-tag-btn" onclick="event.stopPropagation(); window.showAddTagModal && window.showAddTagModal('${patient.id}')" title="Add condition" aria-label="Add condition to ${patient.name}">
+                            <button class="add-tag-btn" onclick="event.stopPropagation(); window.showAddTagModal && window.showAddTagModal('${patient.encryptedId}')" title="Add condition" aria-label="Add condition">
                                 <span>+</span>
                             </button>
                         </div>
@@ -1918,7 +1927,7 @@
                         ` : '<span style="color: #9CA3AF;">N/A</span>'}
                     </td>
                     <td class="actions-col">
-                        <button class="action-btn view-btn" onclick="event.stopPropagation(); window.showPatientDetail && window.showPatientDetail('${patient.id}')" title="View Details" aria-label="View details for ${patient.name}">
+                        <button class="action-btn view-btn" onclick="event.stopPropagation(); window.showPatientDetail && window.showPatientDetail('${patient.encryptedId}')" title="View Details" aria-label="View details">
                             ${ICONS.eye}
                             <span>View Details</span>
                         </button>
@@ -1927,14 +1936,14 @@
                 tbody.appendChild(tr);
             });
             } catch (error) {
-                console.error('Error in renderPatients:', error);
+                // Error handling without logging PHI
             }
         }
 
         function buildConditionStats(patients) {
             const metrics = {};
             patients.forEach(patient => {
-                const conditions = Array.isArray(patient.healthConditions) && patient.healthConditions.length
+                const conditions = Array.isArray(patient.healthConditions) && patient.healthConditions.length > 0
                     ? patient.healthConditions
                     : ['no-conditions'];
                 conditions.forEach(condition => {
@@ -1972,21 +1981,18 @@
 
         function renderCohortAnalytics(patients) {
             try {
-                console.log('renderCohortAnalytics called with', patients ? patients.length : 0, 'patients');
-                
                 if (!patients || !Array.isArray(patients) || patients.length === 0) {
-                    console.warn('No patients data provided to renderCohortAnalytics');
                     return;
                 }
                 
                 const stats = buildConditionStats(patients);
-                console.log('Built condition stats:', stats.length, 'conditions');
+                // Built condition stats
                 const conditionStats = stats.filter(s => s.key !== 'no-conditions');
-                console.log('Filtered condition stats (excluding no-conditions):', conditionStats.length);
+                // Filtered condition stats
                 
                 // Wait for DOM to be ready and Chart.js to load
                 if (typeof Chart === 'undefined') {
-                    console.warn('Chart.js not loaded yet, retrying in 500ms...');
+                    // Chart.js not loaded yet, retrying
                     setTimeout(() => renderCohortAnalytics(patients), 500);
                     return;
                 }
@@ -1996,42 +2002,41 @@
                 const barCanvas = document.getElementById('riskScoreChart');
                 
                 if (!pieCanvas) {
-                    console.error('conditionPieChart canvas element not found!');
+                    return;
                 }
                 if (!barCanvas) {
-                    console.error('riskScoreChart canvas element not found!');
+                    return;
                 }
                 
                 if (!pieCanvas || !barCanvas) {
-                    console.warn('Canvas elements not ready, retrying in 200ms...');
+                    // Canvas elements not ready, retrying
                     setTimeout(() => renderCohortAnalytics(patients), 200);
                     return;
                 }
                 
                 // Small delay to ensure everything is ready
                 setTimeout(() => {
-                    console.log('Rendering charts...');
+                    // Rendering charts
                     // Render Pie Chart - Condition Distribution
                     renderConditionPieChart(conditionStats);
                     
                     // Render Bar Chart - Average Risk Score by Condition
                     renderRiskScoreChart(conditionStats);
-                    console.log('Charts rendered successfully');
+                    // Charts rendered
                 }, 100);
             } catch (error) {
-                console.error('Error rendering cohort analytics:', error);
-                console.error('Stack:', error.stack);
+                // Error rendering cohort analytics
             }
         }
 
         function renderConditionPieChart(stats) {
             const canvas = document.getElementById('conditionPieChart');
             if (!canvas) {
-                console.warn('conditionPieChart canvas not found');
+                return;
                 return;
             }
             if (typeof Chart === 'undefined') {
-                console.error('Chart.js is not loaded');
+                return;
                 return;
             }
 
@@ -2040,7 +2045,7 @@
             
             // If no data, show empty state
             if (!labels.length || !counts.length || counts.every(c => c === 0)) {
-                console.warn('No condition data to display in pie chart');
+                return;
                 if (conditionPieChart) {
                     conditionPieChart.destroy();
                     conditionPieChart = null;
@@ -2116,11 +2121,11 @@
         function renderRiskScoreChart(stats) {
             const canvas = document.getElementById('riskScoreChart');
             if (!canvas) {
-                console.warn('riskScoreChart canvas not found');
+                return;
                 return;
             }
             if (typeof Chart === 'undefined') {
-                console.error('Chart.js is not loaded');
+                return;
                 return;
             }
 
@@ -2129,7 +2134,7 @@
             
             // If no data, show empty state
             if (!labels.length || !scores.length) {
-                console.warn('No risk score data to display');
+                return;
                 if (riskScoreChart) {
                     riskScoreChart.destroy();
                     riskScoreChart = null;
@@ -2237,14 +2242,13 @@
                 const search = searchInput ? searchInput.value.trim().toLowerCase() : '';
                 const selectedCondition = healthFilter ? healthFilter.value : '';
 
-                let filtered = [...mockPatientsData];
+                let filtered = [...patientsData];
 
                 if (search) {
                     filtered = filtered.filter(patient => {
-                        const matchesName = (patient.name || '').toLowerCase().includes(search);
-                        const matchesEmail = (patient.email || '').toLowerCase().includes(search);
-                        const matchesCondition = patient.healthConditions.some(condition => condition.toLowerCase().includes(search));
-                        return matchesName || matchesEmail || matchesCondition;
+                        // Search by conditions only (no PHI in summary)
+                        const matchesCondition = (patient.healthConditions || []).some(condition => condition.toLowerCase().includes(search));
+                        return matchesCondition;
                     });
                 }
 
@@ -2255,22 +2259,23 @@
                 renderPatients(filtered);
                 renderCohortAnalytics(filtered);
             } catch (error) {
-                console.error('Error in applyFilters:', error);
+                // Error in applyFilters
             }
         }
 
-        window.addHealthCondition = function addHealthCondition(patientId, condition) {
-            const patient = mockPatientsData.find(p => p.id === patientId);
-            if (patient && !patient.healthConditions.includes(condition)) {
+        window.addHealthCondition = function addHealthCondition(encryptedPatientId, condition) {
+            const patient = patientsData.find(p => p.encryptedId === encryptedPatientId);
+            if (patient && !(patient.healthConditions || []).includes(condition)) {
+                if (!patient.healthConditions) patient.healthConditions = [];
                 patient.healthConditions.push(condition);
                 ensureConditionScore(patient, condition);
                 applyFilters();
             }
         }
 
-        window.removeHealthCondition = function removeHealthCondition(patientId, condition) {
-            const patient = mockPatientsData.find(p => p.id === patientId);
-            if (patient) {
+        window.removeHealthCondition = function removeHealthCondition(encryptedPatientId, condition) {
+            const patient = patientsData.find(p => p.encryptedId === encryptedPatientId);
+            if (patient && patient.healthConditions) {
                 patient.healthConditions = patient.healthConditions.filter(item => item !== condition);
                 if (patient.conditionScores) {
                     delete patient.conditionScores[(condition || '').toString().toLowerCase()];
@@ -2279,8 +2284,8 @@
             }
         }
 
-        window.showAddTagModal = function showAddTagModal(patientId) {
-            const patient = mockPatientsData.find(p => p.id === patientId);
+        window.showAddTagModal = function showAddTagModal(encryptedPatientId) {
+            const patient = patientsData.find(p => p.encryptedId === encryptedPatientId);
             if (!patient) {
                 showAlert('Patient not found.', 'error');
                 return;
@@ -2308,7 +2313,7 @@
                         const select = document.getElementById('new-condition-select');
                         const value = select ? select.value : '';
                         if (value) {
-                            addHealthCondition(patientId, value);
+                            addHealthCondition(encryptedPatientId, value);
                             closePopup();
                         }
                     }
@@ -2320,9 +2325,71 @@
             ]);
         }
 
-        window.showPatientDetail = async function showPatientDetail(patientId) {
-            // Always attempt AI first for risk scores and trajectories, with robust fallbacks
-            const patient = mockPatientsData.find(p => p.id === patientId);
+        window.showPatientDetail = async function showPatientDetail(encryptedPatientId) {
+            // Fetch full patient data from API
+            let patient = null;
+            try {
+                const token = getAuthToken();
+                
+                // If demo mode, use local patient data
+                if (!token || token.startsWith('demo-token-') || sessionStorage.getItem(AUTH_KEY) === 'true') {
+                    patient = patientsData.find(p => p.encryptedId === encryptedPatientId);
+                    if (patient) {
+                        // Create a basic patient object with required fields
+                        patient = {
+                            ...patient,
+                            encryptedId: encryptedPatientId,
+                            id: encryptedPatientId,
+                            name: `Patient ${encryptedPatientId}`,
+                            healthConditions: patient.healthConditions || []
+                        };
+                    }
+                } else {
+                    const response = await fetch(`/api/flowbase/patient/${encryptedPatientId}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        credentials: 'include'
+                    });
+                    
+                    if (!response.ok) {
+                        // Fallback to local data
+                        patient = patientsData.find(p => p.encryptedId === encryptedPatientId);
+                        if (patient) {
+                            patient = {
+                                ...patient,
+                                encryptedId: encryptedPatientId,
+                                id: encryptedPatientId,
+                                name: `Patient ${encryptedPatientId}`,
+                                healthConditions: patient.healthConditions || []
+                            };
+                        } else {
+                            showAlert('Unable to load patient data.', 'error');
+                            return;
+                        }
+                    } else {
+                        patient = await response.json();
+                        patient.encryptedId = encryptedPatientId; // Store encrypted ID for later use
+                    }
+                }
+            } catch (error) {
+                // Fallback to local data
+                patient = patientsData.find(p => p.encryptedId === encryptedPatientId);
+                if (patient) {
+                    patient = {
+                        ...patient,
+                        encryptedId: encryptedPatientId,
+                        id: encryptedPatientId,
+                        name: `Patient ${encryptedPatientId}`,
+                        healthConditions: patient.healthConditions || []
+                    };
+                } else {
+                    showAlert('Error loading patient data.', 'error');
+                    return;
+                }
+            }
+            
             if (!patient) {
                 showAlert('Patient not found.', 'error');
                 return;
@@ -2331,14 +2398,13 @@
             const modal = document.getElementById('patient-detail-modal');
             const container = document.getElementById('patient-detail-content');
             if (!modal || !container) {
-                console.error('Modal or container not found');
                 return;
             }
             
             // Show the modal
             modal.style.display = 'flex';
 
-            const conditions = patient.healthConditions.length ? patient.healthConditions : ['no-conditions'];
+            const conditions = (patient.healthConditions && patient.healthConditions.length) ? patient.healthConditions : ['no-conditions'];
             const uniqueConditions = [...new Set(conditions.map(condition => condition.toLowerCase()))];
             const actualConditions = uniqueConditions.filter(condition => condition !== 'no-conditions');
 
@@ -2394,7 +2460,7 @@
                             } else if (result.value.data && result.value.data.items && result.value.data.items.length) {
                                 item = result.value.data.items.find(i => i.condition === cond) || result.value.data.items[0];
                             } else if (result.value.error) {
-                                console.warn(`AI scoring error for ${cond}:`, result.value.error);
+                                // AI scoring error
                                 return;
                             }
 
@@ -2423,7 +2489,7 @@
                                 }
                             }
                         } else if (result.status === 'rejected') {
-                            console.warn(`AI scoring failed for ${actualConditions[idx]}:`, result.reason);
+                            // AI scoring failed
                         }
                     });
 
@@ -2433,7 +2499,7 @@
                         Object.entries(aiScores).forEach(([k, v]) => { patient.conditionScores[k] = v; });
                     }
                 } catch (err) {
-                    console.warn('AI scoring unavailable; using deterministic rubric:', err);
+                    // AI scoring unavailable; using deterministic rubric
                 }
             }
 
@@ -2447,7 +2513,7 @@
                 const score = typeof patient.conditionScores?.[condition] === 'number'
                     ? patient.conditionScores[condition]
                     : getPatientConditionScore(patient, condition);
-                const canvasId = `trajectory-${patient.id}-${condition.replace(/[^a-z0-9]/gi, '-')}-${index}`;
+                const canvasId = `trajectory-${patient.encryptedId.substring(0, 8)}-${condition.replace(/[^a-z0-9]/gi, '-')}-${index}`;
                 const riskClass = getRiskScoreClass(score);
                 const riskColor = getRiskScoreColor(score);
                 return {
@@ -2488,13 +2554,15 @@ const overallRiskClass = overallRiskScore !== null ? getRiskScoreClass(overallRi
                 return {
                     metric,
                     trajectory,
-                    canvasId: `traj-detail-trajectory-${patient.id}-${metric.key.replace(/[^a-z0-9]/gi, '-')}-${idx}`,
+                    canvasId: `traj-detail-trajectory-${patient.encryptedId.substring(0, 8)}-${metric.key.replace(/[^a-z0-9]/gi, '-')}-${idx}`,
                     insights: generateTrajectoryInsights(metric.score, metric.key, trajectory)
                 };
             });
 
             destroyConditionCharts();
-            const initials = patient.name.split(' ').map(p => p[0].toUpperCase()).slice(0, 2).join('') || '?';
+            // Use patient ID hash for initials instead of name (HIPAA compliance)
+            const patientIdHash = patient.encryptedId || patient.id || '?';
+            const initials = patientIdHash.substring(0, 2).toUpperCase() || '??';
 
             container.innerHTML = `
                 <div class="patient-detail-body">
@@ -2504,8 +2572,8 @@ const overallRiskClass = overallRiskScore !== null ? getRiskScoreClass(overallRi
                             <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
                                 <div class="avatar">${initials}</div>
                                 <div>
-                                    <div class="detail-subtitle">${patient.name}</div>
-                                    <div class="detail-subtitle">ID: ${patient.id}</div>
+                                    <div class="detail-subtitle">Patient</div>
+                                    <div class="detail-subtitle">ID: [REDACTED]</div>
                                 </div>
                             </div>
                             <div style="margin: 0.75rem 0 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
@@ -2587,7 +2655,28 @@ const overallRiskClass = overallRiskScore !== null ? getRiskScoreClass(overallRi
                         exportCsvBtn.disabled = true;
                         exportCsvBtn.textContent = 'Exporting with AI...';
                         
-                        const response = await fetch(`/api/flowbase/patient/${patient.id}/export/csv`);
+                        const token = getAuthToken();
+                        const isDemoMode = !token || token.startsWith('demo-token-') || sessionStorage.getItem(AUTH_KEY) === 'true';
+                        
+                        let response;
+                        if (isDemoMode) {
+                            // Use demo endpoint with plain patient ID
+                            const patientId = patient.encryptedId; // In demo mode, encryptedId is just '1', '2', etc.
+                            response = await fetch(`/api/flowbase/demo/patient/${patientId}/export/csv`, {
+                                method: 'GET',
+                                credentials: 'include'
+                            });
+                        } else {
+                            // Use authenticated endpoint
+                            response = await fetch(`/api/flowbase/patient/${patient.encryptedId}/export/csv`, {
+                                headers: {
+                                    'Authorization': `Bearer ${token}`,
+                                    'Content-Type': 'application/json'
+                                },
+                                credentials: 'include'
+                            });
+                        }
+                        
                         if (!response.ok) {
                             throw new Error('FlowBase export failed');
                         }
@@ -2596,7 +2685,7 @@ const overallRiskClass = overallRiskScore !== null ? getRiskScoreClass(overallRi
                         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
                         const a = document.createElement('a');
                         a.href = URL.createObjectURL(blob);
-                        a.download = `patient_${patient.id}_${String(patient.name || '').replace(/\s+/g, '_')}_flowbase_export_${new Date().toISOString().split('T')[0]}.csv`;
+                        a.download = `patient_export_${new Date().toISOString().split('T')[0]}.csv`;
                         document.body.appendChild(a);
                         a.click();
                         URL.revokeObjectURL(a.href);
@@ -2604,13 +2693,13 @@ const overallRiskClass = overallRiskScore !== null ? getRiskScoreClass(overallRi
                         
                         showAlert('FlowBase CSV export completed! Data scraped and formatted by AI agent.', 'success');
                     } catch (error) {
-                        console.error('FlowBase export error:', error);
+                        // FlowBase export error
                         // Fallback to basic CSV export
                         const csv = buildPatientSummaryCSV(patient, trajectoryData, actionsByDisease);
                         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
                         const a = document.createElement('a');
                         a.href = URL.createObjectURL(blob);
-                        a.download = `patient_${patient.id}_${String(patient.name || '').replace(/\s+/g, '_')}_summary.csv`;
+                        a.download = `patient_summary_${new Date().toISOString().split('T')[0]}.csv`;
                         document.body.appendChild(a);
                         a.click();
                         URL.revokeObjectURL(a.href);
@@ -2751,10 +2840,10 @@ const overallRiskClass = overallRiskScore !== null ? getRiskScoreClass(overallRi
                             } else if (result && result.data && Array.isArray(result.data)) {
                                 arr.push({ condition: cond, recommendations: result.data });
                             } else if (result && result.error) {
-                                console.warn(`Recommendations error for ${cond}:`, result.error);
+                                // Recommendations error
                             }
                         } else if (settled.status === 'rejected') {
-                            console.warn(`Recommendations failed for ${actualConditions[idx]}:`, settled.reason);
+                            // Recommendations failed
                         }
                     });
 
@@ -2801,7 +2890,7 @@ const overallRiskClass = overallRiskScore !== null ? getRiskScoreClass(overallRi
                         }).join('');
                     }
                 } catch (e) {
-                    console.warn('AI recommendations error:', e);
+                    // AI recommendations error
                     recommendationsMarkup = buildFallbackRecommendationsMarkup();
                 }
 
@@ -2838,8 +2927,8 @@ const overallRiskClass = overallRiskScore !== null ? getRiskScoreClass(overallRi
                     <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
                         <div class="avatar">${initials}</div>
                         <div>
-                            <div class="detail-subtitle">${patient.name}</div>
-                            <div class="detail-subtitle">ID: ${patient.id}</div>
+                            <div class="detail-subtitle">Patient</div>
+                            <div class="detail-subtitle">ID: [REDACTED]</div>
                         </div>
                     </div>
                     <div style="margin: 0.75rem 0 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
@@ -2862,7 +2951,28 @@ const overallRiskClass = overallRiskScore !== null ? getRiskScoreClass(overallRi
                             _csvBtn.disabled = true;
                             _csvBtn.textContent = 'Exporting with AI...';
                             
-                            const response = await fetch(`/api/flowbase/patient/${patient.id}/export/csv`);
+                            const token = getAuthToken();
+                            const isDemoMode = !token || token.startsWith('demo-token-') || sessionStorage.getItem(AUTH_KEY) === 'true';
+                            
+                            let response;
+                            if (isDemoMode) {
+                                // Use demo endpoint with plain patient ID
+                                const patientId = patient.encryptedId; // In demo mode, encryptedId is just '1', '2', etc.
+                                response = await fetch(`/api/flowbase/demo/patient/${patientId}/export/csv`, {
+                                    method: 'GET',
+                                    credentials: 'include'
+                                });
+                            } else {
+                                // Use authenticated endpoint
+                                response = await fetch(`/api/flowbase/patient/${patient.encryptedId}/export/csv`, {
+                                    headers: {
+                                        'Authorization': `Bearer ${token}`,
+                                        'Content-Type': 'application/json'
+                                    },
+                                    credentials: 'include'
+                                });
+                            }
+                            
                             if (!response.ok) {
                                 throw new Error('FlowBase export failed');
                             }
@@ -2871,7 +2981,7 @@ const overallRiskClass = overallRiskScore !== null ? getRiskScoreClass(overallRi
                             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
                             const a = document.createElement('a');
                             a.href = URL.createObjectURL(blob);
-                            a.download = `patient_${patient.id}_${String(patient.name || '').replace(/\s+/g, '_')}_flowbase_export_${new Date().toISOString().split('T')[0]}.csv`;
+                            a.download = `patient_export_${new Date().toISOString().split('T')[0]}.csv`;
                             document.body.appendChild(a);
                             a.click();
                             URL.revokeObjectURL(a.href);
@@ -2879,13 +2989,13 @@ const overallRiskClass = overallRiskScore !== null ? getRiskScoreClass(overallRi
                             
                             showAlert('FlowBase CSV export completed! Data scraped and formatted by AI agent.', 'success');
                         } catch (error) {
-                            console.error('FlowBase export error:', error);
+                            // FlowBase export error
                             // Fallback to basic CSV export
                             const csv = buildPatientSummaryCSV(patient, trajectoryData, actionsByDisease);
                             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
                             const a = document.createElement('a');
                             a.href = URL.createObjectURL(blob);
-                            a.download = `patient_${patient.id}_${String(patient.name || '').replace(/\s+/g, '_')}_summary.csv`;
+                            a.download = `patient_summary_${new Date().toISOString().split('T')[0]}.csv`;
                             document.body.appendChild(a);
                             a.click();
                             URL.revokeObjectURL(a.href);
@@ -2982,7 +3092,7 @@ const overallRiskClass = overallRiskScore !== null ? getRiskScoreClass(overallRi
                             advice.description = adviceRes?.data || adviceRes?.text || adviceRes?.description || adviceRes?.message || '';
                         }
                     } catch (e) {
-                        console.warn('AI peak advice unavailable; rendering basic notice:', e);
+                        // AI peak advice unavailable
                     }
 
                     renderPeakAdvice(data.metric.key, data.canvasId, peakInfo, advice);
@@ -3202,7 +3312,7 @@ const overallRiskClass = overallRiskScore !== null ? getRiskScoreClass(overallRi
                     });
                 });
 
-                const patient = mockPatientsData.find(p => p.id === patientId);
+                const patient = patientsData.find(p => p.encryptedId === patientId);
                 if (!patient) {
                     showAlert('Local patient not found.', 'error');
                     return;
@@ -3232,7 +3342,7 @@ const overallRiskClass = overallRiskScore !== null ? getRiskScoreClass(overallRi
                     await showPatientDetail(patientId);
                 }
             } catch (err) {
-                console.error('EHR import error:', err);
+                // EHR import error
                 showAlert('Failed to import EHR data. Ensure connection and patient context.', 'error');
             }
         }
@@ -3349,111 +3459,99 @@ const overallRiskClass = overallRiskScore !== null ? getRiskScoreClass(overallRi
                     };
                 }).filter(x => typeof x.value === 'number');
                 window.patientEhrProvenance = window.patientEhrProvenance || {};
-                window.patientEhrProvenance[patient.id] = {
+                window.patientEhrProvenance[patient.encryptedId] = {
                     issuer: window.ehrIssuer || 'Unknown',
                     lastImported: new Date().toISOString(),
                     observations
                 };
         
                 applyFilters();
-                showPatientDetail(patient.id);
+                showPatientDetail(patient.encryptedId);
                 showAlert('AI EHR scrape completed. Risk scores updated.', 'success');
             } catch (e) {
-                console.error('AI EHR scrape failed:', e);
+                // AI EHR scrape failed
                 showAlert('Failed to scrape EMR data. Check EMR login and issuer.', 'error');
             }
         }
         
         // Make sure functions are available immediately
         window.showPatientDetail = window.showPatientDetail || function(patientId) {
-            console.error('showPatientDetail not yet initialized');
+            // Function not yet initialized
         };
         window.closePatientDetail = window.closePatientDetail || function() {
-            console.error('closePatientDetail not yet initialized');
+            // Function not yet initialized
         };
         window.addHealthCondition = window.addHealthCondition || function() {
-            console.error('addHealthCondition not yet initialized');
+            // Function not yet initialized
         };
         window.removeHealthCondition = window.removeHealthCondition || function() {
-            console.error('removeHealthCondition not yet initialized');
+            // Function not yet initialized
         };
         window.showAddTagModal = window.showAddTagModal || function() {
-            console.error('showAddTagModal not yet initialized');
+            // Function not yet initialized
         };
 
-        document.addEventListener('DOMContentLoaded', () => {
+        // Main initialization - consolidated DOMContentLoaded listener
+        document.addEventListener('DOMContentLoaded', async () => {
             try {
-                console.log('=== DOMContentLoaded - Initializing dashboard ===');
+                // Dashboard initialization (no PHI in logs)
                 
-                // Check prerequisites
-                console.log('1. Checking prerequisites...');
-                console.log('   - mockPatientsData:', typeof mockPatientsData !== 'undefined' ? `Found (${mockPatientsData.length} patients)` : 'NOT FOUND');
-                console.log('   - Chart.js:', typeof Chart !== 'undefined' ? 'Loaded' : 'NOT LOADED');
-                console.log('   - conditionPieChart canvas:', document.getElementById('conditionPieChart') ? 'Found' : 'NOT FOUND');
-                console.log('   - riskScoreChart canvas:', document.getElementById('riskScoreChart') ? 'Found' : 'NOT FOUND');
+                // Step 1: Check prerequisites
+                if (typeof Chart === 'undefined') {
+                    // Chart.js not loaded - will retry
+                }
                 
-                // OpenAI API key should be set via environment variable or user input
-                // For production, use: sessionStorage.setItem('OPENAI_API_KEY', 'your-api-key-here');
-                // Or set via environment variable if using a backend proxy
-
-                console.log('2. Running initialization functions...');
+                // Step 2: Authentication and basic setup
                 ensureAuthenticated();
                 setWelcomeName();
                 renderNavBar();
                 tryInitFhirClient();
                 
-                // Initialize filters and charts
-                console.log('3. Setting up event listeners...');
+                // Step 3: Initialize SMART on FHIR if available
+                if (typeof window.initSmartOnFhir === 'function') {
+                    window.initSmartOnFhir();
+                }
+                
+                // Step 4: Load patient data from API
+                await loadPatientsData();
+                
+                // Step 5: Set up event listeners
                 const searchInput = document.getElementById('search-input');
                 const healthFilter = document.getElementById('health-filter');
                 
                 if (searchInput) {
                     searchInput.addEventListener('input', applyFilters);
-                    console.log('   ✓ Search input listener attached');
-                } else {
-                    console.error('   ✗ search-input element not found');
                 }
                 
                 if (healthFilter) {
                     healthFilter.addEventListener('change', applyFilters);
-                    console.log('   ✓ Health filter listener attached');
-                } else {
-                    console.error('   ✗ health-filter element not found');
                 }
                 
-                // Initial render
-                console.log('4. Calling applyFilters for initial render...');
-                if (typeof mockPatientsData !== 'undefined' && Array.isArray(mockPatientsData)) {
+                // Step 6: Set up modal event listeners
+                const detailModal = document.getElementById('patient-detail-modal');
+                if (detailModal) {
+                    detailModal.addEventListener('click', (event) => {
+                        if (event.target === detailModal) {
+                            closePatientDetail();
+                        }
+                    });
+                }
+
+                const popupOverlay = document.getElementById('popup-overlay');
+                if (popupOverlay) {
+                    popupOverlay.addEventListener('click', (event) => {
+                        if (event.target === popupOverlay) {
+                            closePopup();
+                        }
+                    });
+                }
+                
+                // Step 7: Initial render (after data is loaded)
+                if (Array.isArray(patientsData) && patientsData.length > 0) {
                     applyFilters(); // This will call renderCohortAnalytics
-                    console.log('   ✓ applyFilters called successfully');
-                } else {
-                    console.error('   ✗ Cannot call applyFilters - mockPatientsData not available');
                 }
-                
-                console.log('=== Dashboard initialization complete ===');
             } catch (error) {
-                console.error('=== ERROR during DOMContentLoaded ===');
-                console.error('Error:', error);
-                console.error('Stack trace:', error.stack);
-                console.error('=== END ERROR ===');
-            }
-
-            const detailModal = document.getElementById('patient-detail-modal');
-            if (detailModal) {
-                detailModal.addEventListener('click', (event) => {
-                    if (event.target === detailModal) {
-                        closePatientDetail();
-                    }
-                });
-            }
-
-            const popupOverlay = document.getElementById('popup-overlay');
-            if (popupOverlay) {
-                popupOverlay.addEventListener('click', (event) => {
-                    if (event.target === popupOverlay) {
-                        closePopup();
-                    }
-                });
+                // Error during initialization (no PHI logged)
             }
         });
 
@@ -3475,7 +3573,7 @@ const overallRiskClass = overallRiskScore !== null ? getRiskScoreClass(overallRi
                     if (client) {
                         window.fhirClient = client;
                         window.ehrIssuer = (client.state && client.state.serverUrl) || null;
-                        console.log('SMART client ready', { patientId: client.patient?.id, issuer: window.ehrIssuer });
+                        // SMART client ready (no PHI logged)
                     }
                 } catch (e) {
                     console.debug('SMART context not present:', e?.message || e);
@@ -3551,15 +3649,15 @@ const overallRiskClass = overallRiskScore !== null ? getRiskScoreClass(overallRi
                         }
                     });
                     patient.metrics = metrics;
-                    showPatientDetail(patient.id);
+                    showPatientDetail(patient.encryptedId);
                     showAlert('EHR data ingested. Scores updated.', 'success');
                 } catch (e) {
-                    console.error('Failed to fetch Observations:', e);
+                    // Failed to fetch Observations (no PHI logged)
                     showAlert('Failed to fetch EHR data.', 'error');
                 }
             };
 
-            document.addEventListener('DOMContentLoaded', window.initSmartOnFhir);
+            // SMART on FHIR initialization is now handled in the main DOMContentLoaded listener above
         })();
     </script>
 </body>

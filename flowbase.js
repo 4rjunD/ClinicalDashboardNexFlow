@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { encryptFileContent, decryptFileContent } = require('./encryption');
 
 // FlowBase - Centralized Patient Data Center
 class FlowBase {
@@ -23,10 +24,21 @@ class FlowBase {
     const filePath = this.getPatientFilePath(patientId);
     if (fs.existsSync(filePath)) {
       try {
-        const data = fs.readFileSync(filePath, 'utf8');
-        return JSON.parse(data);
+        const fileContent = fs.readFileSync(filePath, 'utf8');
+        // Try to decrypt (will handle both encrypted and unencrypted files for migration)
+        try {
+          return decryptFileContent(fileContent);
+        } catch (decryptError) {
+          // If decryption fails, try parsing as plain JSON (for migration)
+          try {
+            return JSON.parse(fileContent);
+          } catch (parseError) {
+            throw new Error('Failed to read patient data file');
+          }
+        }
       } catch (error) {
-        console.error(`Error reading patient data for ${patientId}:`, error);
+        // Don't log patient ID in error - sanitize
+        console.error('Error reading patient data file');
         return this.createEmptyPatientData(patientId);
       }
     }
@@ -63,10 +75,13 @@ class FlowBase {
     data.updatedAt = new Date().toISOString();
     data.metadata.totalRecords = this.countTotalRecords(data);
     try {
-      fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+      // Encrypt data before writing to disk
+      const encryptedContent = encryptFileContent(data);
+      fs.writeFileSync(filePath, encryptedContent, 'utf8');
       return true;
     } catch (error) {
-      console.error(`Error saving patient data for ${patientId}:`, error);
+      // Don't log patient ID in error - sanitize
+      console.error('Error saving patient data file');
       return false;
     }
   }
@@ -177,4 +192,5 @@ class FlowBase {
 }
 
 module.exports = FlowBase;
+
 
