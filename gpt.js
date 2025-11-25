@@ -1679,7 +1679,7 @@ async function postToBackend(path, payload) {
   }
 }
 
-export async function generateRiskScoresAndTrajectoriesWithGPT(conditions, patient, metrics) {
+window.generateRiskScoresAndTrajectoriesWithGPT = async function generateRiskScoresAndTrajectoriesWithGPT(conditions, patient, metrics) {
   const payload = {
     conditions,
     patient,
@@ -1741,7 +1741,7 @@ export async function generateRiskScoresAndTrajectoriesWithGPT(conditions, patie
   return parsed;
 }
 
-export async function generateConditionRecommendationsWithGPT(condition, patient, metrics, scoreContext) {
+window.generateConditionRecommendationsWithGPT = async function generateConditionRecommendationsWithGPT(condition, patient, metrics, scoreContext) {
   const payload = {
     condition,
     patient,

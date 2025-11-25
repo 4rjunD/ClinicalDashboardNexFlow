@@ -289,16 +289,19 @@
             border-color: #000000;
             box-shadow: 4px 4px 0 0 #000000;
         }
-        .histogram-section {
+        .cohort-analytics-section {
             margin-bottom: 2.5rem;
-            background: white;
-            padding: 1.5rem;
-            border-radius: 0;
-            border: 2px solid #000000;
-            box-shadow: none;
         }
-        .histogram-section canvas {
+        .analytics-card {
+            min-height: 350px;
+        }
+        .analytics-card canvas {
             max-height: 300px !important;
+        }
+        @media (max-width: 1024px) {
+            .cohort-analytics-section {
+                grid-template-columns: 1fr !important;
+            }
         }
         .patient-detail-modal {
             position: fixed;
@@ -938,8 +941,15 @@
             <div class="invite-section">
             </div>
         </div>
-        <div class="histogram-section">
-            <canvas id="histogramChart" height="80"></canvas>
+        <div class="cohort-analytics-section" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin: 2rem 0;">
+            <div class="analytics-card" style="background: #FFFFFF; border: 2px solid #000000; padding: 1.5rem; box-shadow: 4px 4px 0 0 #000000;">
+                <h3 style="margin: 0 0 1rem 0; font-size: 1.25rem; font-weight: 700; color: #000000;">Condition Distribution</h3>
+                <canvas id="conditionPieChart" height="250"></canvas>
+            </div>
+            <div class="analytics-card" style="background: #FFFFFF; border: 2px solid #000000; padding: 1.5rem; box-shadow: 4px 4px 0 0 #000000;">
+                <h3 style="margin: 0 0 1rem 0; font-size: 1.25rem; font-weight: 700; color: #000000;">Average Risk Score by Condition</h3>
+                <canvas id="riskScoreChart" height="250"></canvas>
+            </div>
         </div>
         <div class="search-filter-row">
             <input type="text" id="search-input" placeholder="Search by name or health condition">
@@ -1140,7 +1150,9 @@
 
         const AUTH_KEY = 'nf_clinician_auth';
         const NAME_KEY = 'nf_user_name';
-        let histogramChart = null;
+        // Chart variables - declared once at top level
+        var conditionPieChart = null;
+        var riskScoreChart = null;
         let conditionTrajectoryCharts = [];
 
         // SMART on FHIR configuration
@@ -1787,7 +1799,22 @@
             insightsEl.insertAdjacentHTML('beforeend', adviceMarkup);
         }
 
-        initializePatientMetrics(mockPatientsData);
+        // Initialize patient metrics - will be called after DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                try {
+                    initializePatientMetrics(mockPatientsData);
+                } catch (error) {
+                    console.error('Error initializing patient metrics:', error);
+                }
+            });
+        } else {
+            try {
+                initializePatientMetrics(mockPatientsData);
+            } catch (error) {
+                console.error('Error initializing patient metrics:', error);
+            }
+        }
 
         function ensureAuthenticated() {
             if (sessionStorage.getItem(AUTH_KEY) === 'true') {
@@ -1830,17 +1857,21 @@
         }
 
         function renderPatients(patients) {
-            const tbody = document.getElementById('patient-tbody');
-            if (!tbody) return;
+            try {
+                const tbody = document.getElementById('patient-tbody');
+                if (!tbody) {
+                    console.error('patient-tbody element not found');
+                    return;
+                }
 
-            tbody.innerHTML = '';
+                tbody.innerHTML = '';
 
-            if (!Array.isArray(patients) || patients.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem; color: #6B7280; font-size: 1rem;">No patients found</td></tr>';
+                if (!Array.isArray(patients) || patients.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem; color: #6B7280; font-size: 1rem;">No patients found</td></tr>';
                     return;
                 }
                 
-            patients.forEach(patient => {
+                patients.forEach(patient => {
                 const conditions = Array.isArray(patient.healthConditions) ? patient.healthConditions : [];
                 conditions.forEach(condition => ensureConditionScore(patient, condition));
                 
@@ -1859,7 +1890,7 @@
                     ? conditions.map(condition => `
                             <span class="health-tag" data-condition="${condition}">
                                 ${formatConditionName(condition)}
-                                <button class="tag-remove" onclick="event.stopPropagation(); removeHealthCondition('${patient.id}', '${condition}')" aria-label="Remove ${formatConditionName(condition)}"><svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                                <button class="tag-remove" onclick="event.stopPropagation(); window.removeHealthCondition && window.removeHealthCondition('${patient.id}', '${condition}')" aria-label="Remove ${formatConditionName(condition)}"><svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
                             </span>
                         `).join('')
                     : '<span class="no-conditions">No conditions</span>';
@@ -1871,7 +1902,7 @@
                     <td>
                         <div class="health-tags-container">
                             ${tags}
-                            <button class="add-tag-btn" onclick="event.stopPropagation(); showAddTagModal('${patient.id}')" title="Add condition" aria-label="Add condition to ${patient.name}">
+                            <button class="add-tag-btn" onclick="event.stopPropagation(); window.showAddTagModal && window.showAddTagModal('${patient.id}')" title="Add condition" aria-label="Add condition to ${patient.name}">
                                 <span>+</span>
                             </button>
                         </div>
@@ -1887,7 +1918,7 @@
                         ` : '<span style="color: #9CA3AF;">N/A</span>'}
                     </td>
                     <td class="actions-col">
-                        <button class="action-btn view-btn" onclick="event.stopPropagation(); showPatientDetail('${patient.id}')" title="View Details" aria-label="View details for ${patient.name}">
+                        <button class="action-btn view-btn" onclick="event.stopPropagation(); window.showPatientDetail && window.showPatientDetail('${patient.id}')" title="View Details" aria-label="View details for ${patient.name}">
                             ${ICONS.eye}
                             <span>View Details</span>
                         </button>
@@ -1895,6 +1926,9 @@
                 `;
                 tbody.appendChild(tr);
             });
+            } catch (error) {
+                console.error('Error in renderPatients:', error);
+            }
         }
 
         function buildConditionStats(patients) {
@@ -1928,69 +1962,223 @@
             }).sort((a, b) => b.count === a.count ? a.label.localeCompare(b.label) : b.count - a.count);
         }
 
-        function renderConditionHistogram(patients) {
-            const canvas = document.getElementById('histogramChart');
-            if (!canvas || typeof Chart === 'undefined') return;
+        // Chart variables are declared earlier, don't redeclare
+        if (typeof conditionPieChart === 'undefined') {
+            var conditionPieChart = null;
+        }
+        if (typeof riskScoreChart === 'undefined') {
+            var riskScoreChart = null;
+        }
 
-            const stats = buildConditionStats(patients);
-            const labels = stats.map(item => item.label);
-            const conditionKeys = stats.map(item => item.key);
-            const counts = stats.map(item => item.count);
-            const averageScores = stats.map(item => item.avgScore || 0);
-            const maxCount = counts.length ? Math.max(...counts) : 0;
-            const palette = ['#000000', '#1F2937', '#374151', '#4B5563', '#6B7280', '#9CA3AF', '#D1D5DB', '#E5E7EB', '#F3F4F6', '#F9FAFB'];
-            const colors = labels.map((_, index) => palette[index % palette.length]);
+        function renderCohortAnalytics(patients) {
+            try {
+                console.log('renderCohortAnalytics called with', patients ? patients.length : 0, 'patients');
+                
+                if (!patients || !Array.isArray(patients) || patients.length === 0) {
+                    console.warn('No patients data provided to renderCohortAnalytics');
+                    return;
+                }
+                
+                const stats = buildConditionStats(patients);
+                console.log('Built condition stats:', stats.length, 'conditions');
+                const conditionStats = stats.filter(s => s.key !== 'no-conditions');
+                console.log('Filtered condition stats (excluding no-conditions):', conditionStats.length);
+                
+                // Wait for DOM to be ready and Chart.js to load
+                if (typeof Chart === 'undefined') {
+                    console.warn('Chart.js not loaded yet, retrying in 500ms...');
+                    setTimeout(() => renderCohortAnalytics(patients), 500);
+                    return;
+                }
+                
+                // Check if canvas elements exist
+                const pieCanvas = document.getElementById('conditionPieChart');
+                const barCanvas = document.getElementById('riskScoreChart');
+                
+                if (!pieCanvas) {
+                    console.error('conditionPieChart canvas element not found!');
+                }
+                if (!barCanvas) {
+                    console.error('riskScoreChart canvas element not found!');
+                }
+                
+                if (!pieCanvas || !barCanvas) {
+                    console.warn('Canvas elements not ready, retrying in 200ms...');
+                    setTimeout(() => renderCohortAnalytics(patients), 200);
+                    return;
+                }
+                
+                // Small delay to ensure everything is ready
+                setTimeout(() => {
+                    console.log('Rendering charts...');
+                    // Render Pie Chart - Condition Distribution
+                    renderConditionPieChart(conditionStats);
+                    
+                    // Render Bar Chart - Average Risk Score by Condition
+                    renderRiskScoreChart(conditionStats);
+                    console.log('Charts rendered successfully');
+                }, 100);
+            } catch (error) {
+                console.error('Error rendering cohort analytics:', error);
+                console.error('Stack:', error.stack);
+            }
+        }
 
-            if (histogramChart) {
-                histogramChart.destroy();
+        function renderConditionPieChart(stats) {
+            const canvas = document.getElementById('conditionPieChart');
+            if (!canvas) {
+                console.warn('conditionPieChart canvas not found');
+                return;
+            }
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js is not loaded');
+                return;
             }
 
-            const scoreLabelPlugin = {
-                id: 'barScoreLabels',
-                afterDatasetsDraw(chart) {
-                    const { ctx } = chart;
-                    const datasetMeta = chart.getDatasetMeta(0);
-                    datasetMeta.data.forEach((bar, index) => {
-                        const score = averageScores[index];
-                        if (conditionKeys[index] === 'no-conditions' || typeof score !== 'number') {
-                            return;
-                        }
-                        const position = bar.tooltipPosition();
-                        ctx.save();
-                        ctx.fillStyle = '#4338CA';
-                        ctx.font = '600 14px "Poppins", sans-serif';
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'bottom';
-                        const label = `Average: ${score}`;
-                        ctx.fillText(label, position.x, position.y - 8);
-                        ctx.restore();
-                    });
+            const labels = stats.map(item => item.label);
+            const counts = stats.map(item => item.count);
+            
+            // If no data, show empty state
+            if (!labels.length || !counts.length || counts.every(c => c === 0)) {
+                console.warn('No condition data to display in pie chart');
+                if (conditionPieChart) {
+                    conditionPieChart.destroy();
+                    conditionPieChart = null;
                 }
+                // Show placeholder
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#9CA3AF';
+                ctx.font = '14px Inter';
+                ctx.textAlign = 'center';
+                ctx.fillText('No condition data available', canvas.width / 2, canvas.height / 2);
+                return;
+            }
+            
+            // Color palette for conditions
+            const conditionColors = {
+                'diabetes': '#EF4444',
+                'hypertension': '#F59E0B',
+                'heart-disease': '#DC2626',
+                'asthma': '#3B82F6',
+                'arthritis': '#8B5CF6',
+                'parkinsons': '#10B981'
             };
+            
+            const colors = stats.map(item => conditionColors[item.key] || '#6B7280');
 
-            histogramChart = new Chart(canvas.getContext('2d'), {
+            if (conditionPieChart) {
+                conditionPieChart.destroy();
+            }
+
+            conditionPieChart = new Chart(canvas.getContext('2d'), {
+                type: 'pie',
+                data: {
+                    labels: labels.length ? labels : ['No Data'],
+                    datasets: [{
+                        data: counts.length ? counts : [0],
+                        backgroundColor: colors.length ? colors : ['#CBD5F5'],
+                        borderColor: '#FFFFFF',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: {
+                                    size: 12,
+                                    weight: '600'
+                                },
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: context => {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    return `${label}: ${value} patient${value === 1 ? '' : 's'} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderRiskScoreChart(stats) {
+            const canvas = document.getElementById('riskScoreChart');
+            if (!canvas) {
+                console.warn('riskScoreChart canvas not found');
+                return;
+            }
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js is not loaded');
+                return;
+            }
+
+            const labels = stats.map(item => item.label);
+            const scores = stats.map(item => item.avgScore || 0);
+            
+            // If no data, show empty state
+            if (!labels.length || !scores.length) {
+                console.warn('No risk score data to display');
+                if (riskScoreChart) {
+                    riskScoreChart.destroy();
+                    riskScoreChart = null;
+                }
+                return;
+            }
+            
+            // Color based on risk level
+            const getRiskColor = (score) => {
+                if (score >= 70) return '#DC2626'; // High risk - red
+                if (score >= 50) return '#F59E0B'; // Moderate risk - orange
+                if (score >= 30) return '#EAB308'; // Low-moderate - yellow
+                return '#10B981'; // Low risk - green
+            };
+            
+            const colors = scores.map(score => getRiskColor(score));
+
+            if (riskScoreChart) {
+                riskScoreChart.destroy();
+            }
+
+            riskScoreChart = new Chart(canvas.getContext('2d'), {
                 type: 'bar',
                 data: {
                     labels: labels.length ? labels : ['No Data'],
                     datasets: [{
-                        label: 'Patients',
-                        data: counts.length ? counts : [0],
-                        backgroundColor: colors.length ? colors : ['#CBD5F5']
+                        label: 'Average Risk Score',
+                        data: scores.length ? scores : [0],
+                        backgroundColor: colors.length ? colors : ['#CBD5F5'],
+                        borderColor: '#000000',
+                        borderWidth: 2
                     }]
                 },
                 options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: false },
+                        legend: {
+                            display: false
+                        },
                         tooltip: {
                             callbacks: {
                                 label: context => {
-                                    const base = `${context.parsed.y || 0} patient${context.parsed.y === 1 ? '' : 's'}`;
-                                    const key = conditionKeys[context.dataIndex];
-                                    if (key === 'no-conditions') {
-                                        return base;
-                                    }
-                                    const score = averageScores[context.dataIndex] || 0;
-                                    return `${base} - Average: ${score}`;
+                                    const score = context.parsed.y || 0;
+                                    let riskLevel = 'Low';
+                                    if (score >= 70) riskLevel = 'High';
+                                    else if (score >= 50) riskLevel = 'Moderate';
+                                    else if (score >= 30) riskLevel = 'Low-Moderate';
+                                    return `Average Risk: ${score}/100 (${riskLevel})`;
                                 }
                             }
                         }
@@ -1998,80 +2186,80 @@
                     scales: {
                         y: {
                             beginAtZero: true,
-                            suggestedMax: maxCount + 1,
+                            max: 100,
                             ticks: {
-                                stepSize: 1,
+                                stepSize: 10,
                                 color: '#4B5563',
                                 font: {
-                                    size: 16,
+                                    size: 12,
                                     weight: '600'
+                                },
+                                callback: function(value) {
+                                    return value + '/100';
                                 }
                             },
                             title: {
                                 display: true,
-                                text: 'Patient Count',
+                                text: 'Risk Score',
                                 color: '#1F2937',
                                 font: {
-                                    size: 20,
+                                    size: 14,
                                     weight: '700'
                                 }
+                            },
+                            grid: {
+                                color: '#E5E7EB'
                             }
                         },
                         x: {
                             ticks: {
                                 color: '#4B5563',
                                 font: {
-                                    size: 16,
+                                    size: 11,
                                     weight: '600'
-                                }
+                                },
+                                maxRotation: 45,
+                                minRotation: 45
                             },
-                            title: {
-                                display: true,
-                                text: 'Condition',
-                                color: '#1F2937',
-                                font: { size: 20, weight: '700' }
+                            grid: {
+                                display: false
                             }
                         }
-                    },
-                    layout: {
-                        padding: {
-                            top: 32,
-                            bottom: 0,
-                            left: 0,
-                            right: 0
-                        }
                     }
-                },
-                plugins: [scoreLabelPlugin]
+                }
             });
         }
 
         function applyFilters() {
-            const searchInput = document.getElementById('search-input');
-            const healthFilter = document.getElementById('health-filter');
-            const search = searchInput ? searchInput.value.trim().toLowerCase() : '';
-            const selectedCondition = healthFilter ? healthFilter.value : '';
+            try {
+                const searchInput = document.getElementById('search-input');
+                const healthFilter = document.getElementById('health-filter');
+                const search = searchInput ? searchInput.value.trim().toLowerCase() : '';
+                const selectedCondition = healthFilter ? healthFilter.value : '';
 
-            let filtered = [...mockPatientsData];
+                let filtered = [...mockPatientsData];
 
-            if (search) {
-                filtered = filtered.filter(patient => {
-                    const matchesName = (patient.name || '').toLowerCase().includes(search);
-                    const matchesEmail = (patient.email || '').toLowerCase().includes(search);
-                    const matchesCondition = patient.healthConditions.some(condition => condition.toLowerCase().includes(search));
-                    return matchesName || matchesEmail || matchesCondition;
-                });
+                if (search) {
+                    filtered = filtered.filter(patient => {
+                        const matchesName = (patient.name || '').toLowerCase().includes(search);
+                        const matchesEmail = (patient.email || '').toLowerCase().includes(search);
+                        const matchesCondition = patient.healthConditions.some(condition => condition.toLowerCase().includes(search));
+                        return matchesName || matchesEmail || matchesCondition;
+                    });
+                }
+
+                if (selectedCondition) {
+                    filtered = filtered.filter(patient => patient.healthConditions.includes(selectedCondition));
+                }
+
+                renderPatients(filtered);
+                renderCohortAnalytics(filtered);
+            } catch (error) {
+                console.error('Error in applyFilters:', error);
             }
-
-            if (selectedCondition) {
-                filtered = filtered.filter(patient => patient.healthConditions.includes(selectedCondition));
-            }
-
-            renderPatients(filtered);
-            renderConditionHistogram(filtered);
         }
 
-        function addHealthCondition(patientId, condition) {
+        window.addHealthCondition = function addHealthCondition(patientId, condition) {
             const patient = mockPatientsData.find(p => p.id === patientId);
             if (patient && !patient.healthConditions.includes(condition)) {
                 patient.healthConditions.push(condition);
@@ -2080,7 +2268,7 @@
             }
         }
 
-        function removeHealthCondition(patientId, condition) {
+        window.removeHealthCondition = function removeHealthCondition(patientId, condition) {
             const patient = mockPatientsData.find(p => p.id === patientId);
             if (patient) {
                 patient.healthConditions = patient.healthConditions.filter(item => item !== condition);
@@ -2091,7 +2279,7 @@
             }
         }
 
-        function showAddTagModal(patientId) {
+        window.showAddTagModal = function showAddTagModal(patientId) {
             const patient = mockPatientsData.find(p => p.id === patientId);
             if (!patient) {
                 showAlert('Patient not found.', 'error');
@@ -2132,7 +2320,7 @@
             ]);
         }
 
-        async function showPatientDetail(patientId) {
+        window.showPatientDetail = async function showPatientDetail(patientId) {
             // Always attempt AI first for risk scores and trajectories, with robust fallbacks
             const patient = mockPatientsData.find(p => p.id === patientId);
             if (!patient) {
@@ -2142,7 +2330,13 @@
 
             const modal = document.getElementById('patient-detail-modal');
             const container = document.getElementById('patient-detail-content');
-            if (!modal || !container) return;
+            if (!modal || !container) {
+                console.error('Modal or container not found');
+                return;
+            }
+            
+            // Show the modal
+            modal.style.display = 'flex';
 
             const conditions = patient.healthConditions.length ? patient.healthConditions : ['no-conditions'];
             const uniqueConditions = [...new Set(conditions.map(condition => condition.toLowerCase()))];
@@ -2815,7 +3009,7 @@ const overallRiskClass = overallRiskScore !== null ? getRiskScoreClass(overallRi
             }
         }
 
-        function closePatientDetail() {
+        window.closePatientDetail = function closePatientDetail() {
             const modal = document.getElementById('patient-detail-modal');
             if (modal) {
                 modal.style.display = 'none';
@@ -3170,19 +3364,79 @@ const overallRiskClass = overallRiskScore !== null ? getRiskScoreClass(overallRi
             }
         }
         
+        // Make sure functions are available immediately
+        window.showPatientDetail = window.showPatientDetail || function(patientId) {
+            console.error('showPatientDetail not yet initialized');
+        };
+        window.closePatientDetail = window.closePatientDetail || function() {
+            console.error('closePatientDetail not yet initialized');
+        };
+        window.addHealthCondition = window.addHealthCondition || function() {
+            console.error('addHealthCondition not yet initialized');
+        };
+        window.removeHealthCondition = window.removeHealthCondition || function() {
+            console.error('removeHealthCondition not yet initialized');
+        };
+        window.showAddTagModal = window.showAddTagModal || function() {
+            console.error('showAddTagModal not yet initialized');
+        };
+
         document.addEventListener('DOMContentLoaded', () => {
-            // OpenAI API key should be set via environment variable or user input
-            // For production, use: sessionStorage.setItem('OPENAI_API_KEY', 'your-api-key-here');
-            // Or set via environment variable if using a backend proxy
+            try {
+                console.log('=== DOMContentLoaded - Initializing dashboard ===');
+                
+                // Check prerequisites
+                console.log('1. Checking prerequisites...');
+                console.log('   - mockPatientsData:', typeof mockPatientsData !== 'undefined' ? `Found (${mockPatientsData.length} patients)` : 'NOT FOUND');
+                console.log('   - Chart.js:', typeof Chart !== 'undefined' ? 'Loaded' : 'NOT LOADED');
+                console.log('   - conditionPieChart canvas:', document.getElementById('conditionPieChart') ? 'Found' : 'NOT FOUND');
+                console.log('   - riskScoreChart canvas:', document.getElementById('riskScoreChart') ? 'Found' : 'NOT FOUND');
+                
+                // OpenAI API key should be set via environment variable or user input
+                // For production, use: sessionStorage.setItem('OPENAI_API_KEY', 'your-api-key-here');
+                // Or set via environment variable if using a backend proxy
 
-            ensureAuthenticated();
-            setWelcomeName();
-            renderNavBar();
-            tryInitFhirClient();
-            applyFilters();
-
-            document.getElementById('search-input').addEventListener('input', applyFilters);
-            document.getElementById('health-filter').addEventListener('change', applyFilters);
+                console.log('2. Running initialization functions...');
+                ensureAuthenticated();
+                setWelcomeName();
+                renderNavBar();
+                tryInitFhirClient();
+                
+                // Initialize filters and charts
+                console.log('3. Setting up event listeners...');
+                const searchInput = document.getElementById('search-input');
+                const healthFilter = document.getElementById('health-filter');
+                
+                if (searchInput) {
+                    searchInput.addEventListener('input', applyFilters);
+                    console.log('   ✓ Search input listener attached');
+                } else {
+                    console.error('   ✗ search-input element not found');
+                }
+                
+                if (healthFilter) {
+                    healthFilter.addEventListener('change', applyFilters);
+                    console.log('   ✓ Health filter listener attached');
+                } else {
+                    console.error('   ✗ health-filter element not found');
+                }
+                
+                // Initial render
+                console.log('4. Calling applyFilters for initial render...');
+                if (typeof mockPatientsData !== 'undefined' && Array.isArray(mockPatientsData)) {
+                    applyFilters(); // This will call renderCohortAnalytics
+                    console.log('   ✓ applyFilters called successfully');
+                } else {
+                    console.error('   ✗ Cannot call applyFilters - mockPatientsData not available');
+                }
+                
+                console.log('=== Dashboard initialization complete ===');
+            } catch (error) {
+                console.error('=== ERROR during DOMContentLoaded ===');
+                console.error('Error:', error);
+                console.error('Stack trace:', error.stack);
+                console.error('=== END ERROR ===');
+            }
 
             const detailModal = document.getElementById('patient-detail-modal');
             if (detailModal) {
