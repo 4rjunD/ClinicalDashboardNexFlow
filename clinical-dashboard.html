@@ -1015,13 +1015,15 @@
 
         // SMART on FHIR configuration
         const SMART_CONFIG = {
-            clientId: 'YOUR_SMART_CLIENT_ID',
+            clientId: 'YOUR_SMART_CLIENT_ID', // Replace with actual SMART client ID from EHR vendor
             scope: 'launch/patient patient/*.read openid profile',
             redirectUri: window.location.origin + window.location.pathname
         };
         const NF_FHIR_CONNECTED_KEY = 'nf_fhir_connected';
         const NF_FHIR_ISS_KEY = 'nf_fhir_iss';
-        window.nfFhirClient = null;
+        // Use single consistent client variable
+        window.fhirClient = window.fhirClient || null;
+        window.nfFhirClient = window.fhirClient; // Alias for backward compatibility
 
         // Helper functions for trend badges and exports
         function computeTrendLabel(trajectory) {
@@ -3236,7 +3238,9 @@ const overallRiskClass = overallRiskScore !== null ? getRiskScoreClass(overallRi
                 }
                 const client = await FHIR.oauth2.ready();
                 if (client) {
-                    window.nfFhirClient = client;
+                    // Use consistent client variable
+                    window.fhirClient = client;
+                    window.nfFhirClient = client; // Alias for backward compatibility
                     sessionStorage.setItem(NF_FHIR_CONNECTED_KEY, 'true');
                     return client;
                 }
@@ -3248,11 +3252,12 @@ const overallRiskClass = overallRiskScore !== null ? getRiskScoreClass(overallRi
 
         async function importEHRForPatient(patientId) {
             try {
-                if (!window.nfFhirClient) {
+                // Use consistent client variable
+                const client = window.fhirClient || window.nfFhirClient;
+                if (!client) {
                     showAlert('Please connect to the EHR first.', 'warning');
                     return;
                 }
-                const client = window.nfFhirClient;
                 const ehrPatientId = await client.getPatientId();
 
                 const codes = [
@@ -3558,9 +3563,9 @@ const overallRiskClass = overallRiskScore !== null ? getRiskScoreClass(overallRi
         // SMART on FHIR config and helpers
         (function smartOnFhirAuth() {
             window.FHIR_CONFIG = window.FHIR_CONFIG || {
-                clientId: 'YOUR_CLIENT_ID',
-                scope: 'launch/patient patient/*.read openid profile',
-                redirectUri: window.location.origin + '/clinical-dashboard.html'
+                clientId: SMART_CONFIG.clientId || 'YOUR_CLIENT_ID', // Use SMART_CONFIG if available
+                scope: SMART_CONFIG.scope || 'launch/patient patient/*.read openid profile',
+                redirectUri: SMART_CONFIG.redirectUri || window.location.origin + '/clinical-dashboard.html'
             };
 
             window.fhirClient = window.fhirClient || null;
@@ -3571,12 +3576,15 @@ const overallRiskClass = overallRiskScore !== null ? getRiskScoreClass(overallRi
                 try {
                     const client = await window.FHIR.oauth2.ready();
                     if (client) {
+                        // Use consistent client variable
                         window.fhirClient = client;
+                        window.nfFhirClient = client; // Alias for backward compatibility
                         window.ehrIssuer = (client.state && client.state.serverUrl) || null;
+                        sessionStorage.setItem(NF_FHIR_CONNECTED_KEY, 'true');
                         // SMART client ready (no PHI logged)
                     }
                 } catch (e) {
-                    console.debug('SMART context not present:', e?.message || e);
+                    // SMART context not present (normal if not launched from EHR)
                 }
             };
 
